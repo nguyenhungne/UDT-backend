@@ -1,0 +1,23 @@
+@startuml
+
+actor Customer
+actor Agency
+actor Admin
+
+Customer --> (View Products)
+Customer --> (Add Product to Cart)
+Customer --> (Remove Product from Cart)
+Customer --> (Checkout)
+Customer --> (View Transaction History)
+Customer --> (View Billing Information)
+
+Agency --> (Add Product)
+Agency --> (Update Product)
+Agency --> (Remove Product)
+Agency --> (View Transactions)
+
+Admin --> (Create Agency)
+Admin --> (Update Agency)
+Admin --> (Delete Agency)
+
+@enduml

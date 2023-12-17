@@ -1,0 +1,30 @@
+@startuml
+
+start
+
+:Customer logs in;
+
+if (Customer wants to buy a product?) then (yes)
+  :Customer views products;
+  :Customer adds product to cart;
+  :Customer checks out;
+  :Transaction is created;
+  :Billing information is updated;
+else (no)
+endif
+
+if (Agency wants to sell a product?) then (yes)
+  :Agency logs in;
+  :Agency adds product;
+else (no)
+endif
+
+if (Admin wants to manage agencies?) then (yes)
+  :Admin logs in;
+  :Admin creates/updates/deletes agency;
+else (no)
+endif
+
+stop
+
+@enduml

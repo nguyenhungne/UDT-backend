@@ -1,0 +1,46 @@
+@startuml
+
+class Customer {
+  - id: number
+  - name: string
+  - address: string
+  - email: string
+  - phoneNumber: string
+  - gender: string
+  - cart: Cart
+  - transactions: Transaction[]
+  - billing: Billing
+  --
+  + getDetails(): string
+  + updateDetails(name: string, address: string, email: string, phoneNumber: string, gender: string): void
+}
+
+class Agency {
+  - id: number
+  - name: string
+  - address: string
+  - email: string
+  - phoneNumber: string
+  - gender: string
+  - products: Product[]
+  - transactions: Transaction[]
+  - billing: Billing
+  --
+  + getDetails(): string
+  + updateDetails(name: string, address: string, email: string, phoneNumber: string, gender: string): void
+}
+
+class Admin {
+  - id: number
+  - name: string
+  - email: string
+  - password: string
+  --
+  + getDetails(): string
+  + updateDetails(name: string, email: string, password: string): void
+  + createAgency(agency: Agency): void
+  + updateAgency(agencyId: number, agency: Agency): void
+  + deleteAgency(agencyId: number): void
+}
+
+@enduml

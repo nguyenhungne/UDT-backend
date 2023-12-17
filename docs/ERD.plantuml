@@ -1,0 +1,71 @@
+@startuml
+
+entity "Customer" as customer {
+  + id: number (PK)
+  ---
+  name: string
+  address: string
+  email: string
+  phoneNumber: string
+  gender: string
+}
+
+entity "Cart" as cart {
+  + id: number (PK)
+  ---
+  # customerId: number (FK)
+}
+
+entity "Transaction" as transaction {
+  + id: number (PK)
+  ---
+  # customerId: number (FK)
+  # agencyId: number (FK)
+  # productId: number (FK)
+  # billingId: number (FK)
+}
+
+entity "Billing" as billing {
+  + id: number (PK)
+  ---
+  # customerId: number (FK)
+  total: number
+}
+
+entity "Agency" as agency {
+  + id: number (PK)
+  ---
+  name: string
+  address: string
+  email: string
+  phoneNumber: string
+  gender: string
+}
+
+entity "Product" as product {
+  + id: number (PK)
+  ---
+  # agencyId: number (FK)
+  name: string
+  price: number
+}
+
+entity "Admin" as admin {
+  + id: number (PK)
+  ---
+  name: string
+  email: string
+  password: string
+}
+
+customer ||--o{ cart : has
+customer ||--o{ transaction : makes
+customer ||--o{ billing : receives
+agency ||--o{ transaction : receives
+agency ||--o{ product : sells
+product ||--o{ cart : contains
+product ||--o{ transaction : part of
+billing ||--o{ transaction : part of
+admin ||--o{ agency : manages
+
+@enduml
