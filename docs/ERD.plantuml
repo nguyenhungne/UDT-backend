@@ -1,4 +1,4 @@
-@startuml
+@startuml entity-relationship-diagram
 
 entity "Customer" as customer {
   + id: number (PK)
