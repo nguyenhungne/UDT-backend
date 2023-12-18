@@ -1,0 +1,40 @@
+@startuml
+actor User
+participant System
+
+== Customer ==
+User -> System: Request to login
+System -> User: Validate credentials
+System -> User: Return authentication token
+User -> System: Request to read transaction, billing linked with product (include token)
+System -> User: Validate token and return requested data
+User -> System: Request to read agency information (include token)
+System -> User: Validate token and return requested data
+User -> System: Request to logout
+System -> User: Invalidate token
+
+== Agency ==
+User -> System: Request to login
+System -> User: Validate credentials
+System -> User: Return authentication token
+User -> System: Request to read transaction, billing of owner (include token)
+System -> User: Validate token and return requested data
+User -> System: Request to create/update/delete owner product (include token)
+System -> User: Validate token and perform requested operation
+User -> System: Request to logout
+System -> User: Invalidate token
+
+== Admin ==
+User -> System: Request to login
+System -> User: Validate credentials
+System -> User: Return authentication token
+User -> System: Request to read billing, transaction linked product, customer, agency (include token)
+System -> User: Validate token and return requested data
+User -> System: Request to logout
+System -> User: Invalidate token
+
+== Common ==
+User -> System: Request to store auth state (include token)
+System -> User: Validate token and store auth state
+
+@enduml
