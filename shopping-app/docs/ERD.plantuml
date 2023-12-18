@@ -16,6 +16,14 @@ entity "Cart" as cart {
   # customerId: number (FK)
 }
 
+entity "CartItem" as cartItem {
+  + id: number (PK)
+  ---
+  # cartId: number (FK)
+  # productId: number (FK)
+  quantity: number
+}
+
 entity "Transaction" as transaction {
   + id: number (PK)
   ---
@@ -39,7 +47,6 @@ entity "Agency" as agency {
   address: string
   email: string
   phoneNumber: string
-  gender: string
 }
 
 entity "Product" as product {
@@ -63,9 +70,10 @@ customer ||--o{ transaction : makes
 customer ||--o{ billing : receives
 agency ||--o{ transaction : receives
 agency ||--o{ product : sells
-product ||--o{ cart : contains
 product ||--o{ transaction : part of
 billing ||--o{ transaction : part of
 admin ||--o{ agency : manages
+cart ||--o{ cartItem : contains
+product ||--o{ cartItem : part of
 
 @enduml

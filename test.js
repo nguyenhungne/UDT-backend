@@ -568,7 +568,15 @@ function a0_0x4ea09f(_0x11fc43) {
 
 //     SECTION II:
 //       1. With UML you have already designed on question 1, what database are you using to implement?
+//       --> mongodb   
 //       2. Why are you using that? What is the strong and weak point of it?
+//       Strengths:
+//       - Flexible data model:
+//          + MongoDB is a NoSQL database, meaning it doesn't require a fixed schema like SQL databases. This allows you to store data in the way you want, and change the data structure without having to overhaul the entire database.   
+//       - High performance:
+//          + MongoDB provides high query performance, especially for complex queries.
+//       - Scalability:
+//          + MongoDB is great for working with large data as it supports sharding, allowing you to distribute data across multiple servers.  
 //       3. Write docker-compose.yml to start the database locally.
 //       4. Setup Loopback 4
 //       5. Using UML on question 1, set up API for these features.

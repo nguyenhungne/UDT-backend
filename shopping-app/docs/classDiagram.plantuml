@@ -1,0 +1,71 @@
+@startuml
+
+class Customer {
+  + id: string
+  ---
+  name: string
+  address: string
+  email: string
+  phoneNumber: string
+  gender: string
+}
+
+class Cart {
+  + id: string
+  ---
+  # customerId: string
+}
+
+class Transaction {
+  + id: string
+  ---
+  # customerId: string
+  # agencyId: string
+  # productId: string
+  # billingId: string
+}
+
+class Billing {
+  + id: string
+  ---
+  # customerId: string
+  total: string
+}
+
+class Agency {
+  + id: string
+  ---
+  name: string
+  address: string
+  email: string
+  phoneNumber: string
+  gender: string
+}
+
+class Product {
+  + id: string
+  ---
+  # agencyId: string
+  name: string
+  price: string
+}
+
+class Admin {
+  + id: string
+  ---
+  name: string
+  email: string
+  password: string
+}
+
+Customer "1" -- "0..*" Cart : has
+Customer "1" -- "0..*" Transaction : makes
+Customer "1" -- "0..*" Billing : receives
+Agency "1" -- "0..*" Transaction : receives
+Agency "1" -- "0..*" Product : sells
+Product "1" -- "0..*" Cart : contains
+Product "1" -- "0..*" Transaction : part of
+Billing "1" -- "0..*" Transaction : part of
+Admin "1" -- "0..*" Agency : manages
+
+@enduml
