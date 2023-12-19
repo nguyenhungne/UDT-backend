@@ -37,12 +37,12 @@ export class ProductController {
         'application/json': {
           schema: getModelSchemaRef(Product, {
             title: 'NewProduct',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    product: Omit<Product, 'id'>,
+    product: Product,
   ): Promise<Product> {
     return this.productRepository.create(product);
   }
@@ -105,7 +105,7 @@ export class ProductController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Product, {exclude: 'where'}) filter?: FilterExcludingWhere<Product>
   ): Promise<Product> {
     return this.productRepository.findById(id, filter);
@@ -116,7 +116,7 @@ export class ProductController {
     description: 'Product PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -134,7 +134,7 @@ export class ProductController {
     description: 'Product PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() product: Product,
   ): Promise<void> {
     await this.productRepository.replaceById(id, product);
@@ -144,7 +144,7 @@ export class ProductController {
   @response(204, {
     description: 'Product DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.productRepository.deleteById(id);
   }
 }

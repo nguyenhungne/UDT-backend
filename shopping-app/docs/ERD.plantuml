@@ -1,7 +1,7 @@
 @startuml entity-relationship-diagram
 
 entity "Customer" as customer {
-  + id: number (PK)
+  + id: string (PK)
   ---
   name: string
   address: string
@@ -11,37 +11,37 @@ entity "Customer" as customer {
 }
 
 entity "Cart" as cart {
-  + id: number (PK)
+  + id: string (PK)
   ---
-  # customerId: number (FK)
+  # customerId: string (FK)
 }
 
 entity "CartItem" as cartItem {
-  + id: number (PK)
+  + id: string (PK)
   ---
-  # cartId: number (FK)
-  # productId: number (FK)
+  # cartId: string (FK)
+  # productId: string (FK)
   quantity: number
 }
 
 entity "Transaction" as transaction {
-  + id: number (PK)
+  + id: string (PK)
   ---
-  # customerId: number (FK)
-  # agencyId: number (FK)
-  # productId: number (FK)
-  # billingId: number (FK)
+  # customerId: string (FK)
+  # agencyId: string (FK)
+  # productId: string (FK)
+  # billingId: string (FK)
 }
 
 entity "Billing" as billing {
-  + id: number (PK)
+  + id: string (PK)
   ---
-  # customerId: number (FK)
+  # customerId: string (FK)
   total: number
 }
 
 entity "Agency" as agency {
-  + id: number (PK)
+  + id: string (PK)
   ---
   name: string
   address: string
@@ -50,15 +50,15 @@ entity "Agency" as agency {
 }
 
 entity "Product" as product {
-  + id: number (PK)
+  + id: string (PK)
   ---
-  # agencyId: number (FK)
+  # agencyId: string (FK)
   name: string
   price: number
 }
 
 entity "Admin" as admin {
-  + id: number (PK)
+  + id: string (PK)
   ---
   name: string
   email: string

@@ -19,7 +19,6 @@ import {
 } from '@loopback/rest';
 import {Billing} from '../models';
 import {BillingRepository} from '../repositories';
-import { authenticate } from '@loopback/authentication';
 
 export class BillingController {
   constructor(
@@ -27,7 +26,6 @@ export class BillingController {
     public billingRepository : BillingRepository,
   ) {}
 
-  @authenticate('jwt')
   @post('/billings')
   @response(200, {
     description: 'Billing model instance',
@@ -39,17 +37,16 @@ export class BillingController {
         'application/json': {
           schema: getModelSchemaRef(Billing, {
             title: 'NewBilling',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    billing: Omit<Billing, 'id'>,
+    billing: Billing,
   ): Promise<Billing> {
     return this.billingRepository.create(billing);
   }
 
-  @authenticate('jwt')
   @get('/billings/count')
   @response(200, {
     description: 'Billing model count',
@@ -61,7 +58,6 @@ export class BillingController {
     return this.billingRepository.count(where);
   }
 
-  @authenticate('jwt')
   @get('/billings')
   @response(200, {
     description: 'Array of Billing model instances',
@@ -80,7 +76,6 @@ export class BillingController {
     return this.billingRepository.find(filter);
   }
 
-  @authenticate('jwt')
   @patch('/billings')
   @response(200, {
     description: 'Billing PATCH success count',
@@ -100,7 +95,6 @@ export class BillingController {
     return this.billingRepository.updateAll(billing, where);
   }
 
-  @authenticate('jwt')
   @get('/billings/{id}')
   @response(200, {
     description: 'Billing model instance',
@@ -111,19 +105,18 @@ export class BillingController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Billing, {exclude: 'where'}) filter?: FilterExcludingWhere<Billing>
   ): Promise<Billing> {
     return this.billingRepository.findById(id, filter);
   }
 
-  @authenticate('jwt')
   @patch('/billings/{id}')
   @response(204, {
     description: 'Billing PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -135,25 +128,23 @@ export class BillingController {
   ): Promise<void> {
     await this.billingRepository.updateById(id, billing);
   }
-  
-  @authenticate('jwt')
+
   @put('/billings/{id}')
   @response(204, {
     description: 'Billing PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() billing: Billing,
   ): Promise<void> {
     await this.billingRepository.replaceById(id, billing);
   }
 
-  @authenticate('jwt')
   @del('/billings/{id}')
   @response(204, {
     description: 'Billing DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.billingRepository.deleteById(id);
   }
 }

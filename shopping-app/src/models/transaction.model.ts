@@ -3,35 +3,35 @@ import {Entity, model, property} from '@loopback/repository';
 @model()
 export class Transaction extends Entity {
   @property({
-    type: 'number',
+    type: 'string',
     id: true,
     generated: true,
   })
-  id?: number;
+  id?: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  customerId: number;
+  customerId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  agencyId: number;
+  agencyId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  productId: number;
+  productId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  billingId: number;
+  billingId: string;
 
 
   constructor(data?: Partial<Transaction>) {

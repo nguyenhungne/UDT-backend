@@ -19,7 +19,6 @@ import {
 } from '@loopback/rest';
 import {Transaction} from '../models';
 import {TransactionRepository} from '../repositories';
-import { authenticate } from '@loopback/authentication';
 
 export class TransactionController {
   constructor(
@@ -27,8 +26,6 @@ export class TransactionController {
     public transactionRepository : TransactionRepository,
   ) {}
 
-
-  @authenticate('jwt')
   @post('/transactions')
   @response(200, {
     description: 'Transaction model instance',
@@ -40,17 +37,16 @@ export class TransactionController {
         'application/json': {
           schema: getModelSchemaRef(Transaction, {
             title: 'NewTransaction',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    transaction: Omit<Transaction, 'id'>,
+    transaction: Transaction,
   ): Promise<Transaction> {
     return this.transactionRepository.create(transaction);
   }
 
-  @authenticate('jwt')
   @get('/transactions/count')
   @response(200, {
     description: 'Transaction model count',
@@ -62,7 +58,6 @@ export class TransactionController {
     return this.transactionRepository.count(where);
   }
 
-  @authenticate('jwt')
   @get('/transactions')
   @response(200, {
     description: 'Array of Transaction model instances',
@@ -81,7 +76,6 @@ export class TransactionController {
     return this.transactionRepository.find(filter);
   }
 
-  @authenticate('jwt')
   @patch('/transactions')
   @response(200, {
     description: 'Transaction PATCH success count',
@@ -101,7 +95,6 @@ export class TransactionController {
     return this.transactionRepository.updateAll(transaction, where);
   }
 
-  @authenticate('jwt')
   @get('/transactions/{id}')
   @response(200, {
     description: 'Transaction model instance',
@@ -112,19 +105,18 @@ export class TransactionController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Transaction, {exclude: 'where'}) filter?: FilterExcludingWhere<Transaction>
   ): Promise<Transaction> {
     return this.transactionRepository.findById(id, filter);
   }
 
-  @authenticate('jwt')
   @patch('/transactions/{id}')
   @response(204, {
     description: 'Transaction PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -137,24 +129,22 @@ export class TransactionController {
     await this.transactionRepository.updateById(id, transaction);
   }
 
-  @authenticate('jwt')
   @put('/transactions/{id}')
   @response(204, {
     description: 'Transaction PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() transaction: Transaction,
   ): Promise<void> {
     await this.transactionRepository.replaceById(id, transaction);
   }
 
-  @authenticate('jwt')
   @del('/transactions/{id}')
   @response(204, {
     description: 'Transaction DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.transactionRepository.deleteById(id);
   }
 }

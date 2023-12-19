@@ -37,12 +37,12 @@ export class CartItemController {
         'application/json': {
           schema: getModelSchemaRef(CartItem, {
             title: 'NewCartItem',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    cartItem: Omit<CartItem, 'id'>,
+    cartItem: CartItem,
   ): Promise<CartItem> {
     return this.cartItemRepository.create(cartItem);
   }
@@ -105,7 +105,7 @@ export class CartItemController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(CartItem, {exclude: 'where'}) filter?: FilterExcludingWhere<CartItem>
   ): Promise<CartItem> {
     return this.cartItemRepository.findById(id, filter);
@@ -116,7 +116,7 @@ export class CartItemController {
     description: 'CartItem PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -134,7 +134,7 @@ export class CartItemController {
     description: 'CartItem PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() cartItem: CartItem,
   ): Promise<void> {
     await this.cartItemRepository.replaceById(id, cartItem);
@@ -144,7 +144,7 @@ export class CartItemController {
   @response(204, {
     description: 'CartItem DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.cartItemRepository.deleteById(id);
   }
 }

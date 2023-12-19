@@ -3,6 +3,9 @@ import {
   CountSchema,
   Filter,
   FilterExcludingWhere,
+  model,
+  property,
+  repository,
   Where,
 } from '@loopback/repository';
 import {
@@ -19,24 +22,16 @@ import {
 } from '@loopback/rest';
 import {Customer} from '../models';
 import {CustomerRepository} from '../repositories';
-
-import {authenticate, TokenService} from '@loopback/authentication';
-import {
-  Credentials,
-  MyUserService,
-  TokenServiceBindings,
-  User,
-  UserRepository,
-  UserServiceBindings,
-} from '@loopback/authentication-jwt';
-import {Transaction} from '../models';
-import {inject} from '@loopback/core';
-import {model, property, repository} from '@loopback/repository';
-import {SecurityBindings, securityId, UserProfile} from '@loopback/security';
-import {genSalt, hash} from 'bcryptjs';
+import { Credentials, MyUserService, TokenServiceBindings, User, UserRepository, UserServiceBindings } from '@loopback/authentication-jwt';
+import { inject } from '@loopback/core';
+import { authenticate, TokenService } from '@loopback/authentication';
+import { SecurityBindings } from '@loopback/security';
+import { UserProfile } from '@loopback/security';
+import { securityId } from '@loopback/security';
+import { genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
 
-
+@model()
 export class NewUserRequest extends User {
   @property({
     type: 'string',
@@ -45,13 +40,23 @@ export class NewUserRequest extends User {
   password: string;
 }
 
+//newCustomerRequest
+export class NewCustomerRequest extends Customer {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+}
+
+
 const CredentialsSchema: SchemaObject = {
   type: 'object',
-  required: ['email', 'password'],
+  required: [ 'password', "username"],
   properties: {
-    email: {
+    username: {
       type: 'string',
-      format: 'email',
+      format: 'username',
     },
     password: {
       type: 'string',
@@ -60,6 +65,9 @@ const CredentialsSchema: SchemaObject = {
   },
 };
 
+
+
+
 export const CredentialsRequestBody = {
   description: 'The input of login function',
   required: true,
@@ -67,8 +75,6 @@ export const CredentialsRequestBody = {
     'application/json': {schema: CredentialsSchema},
   },
 };
-
-
 
 
 
@@ -86,9 +92,7 @@ export class CustomerController {
     public customerRepository : CustomerRepository,
   ) {}
 
-
-  //authentication
-  @post('/customers/login', {
+  @post('/users/login', {
     responses: {
       '200': {
         description: 'Token',
@@ -120,37 +124,75 @@ export class CustomerController {
     return {token};
   }
 
+  @authenticate('jwt')
+  @get('/whoAmI', {
+    responses: {
+      '200': {
+        description: 'Return current user',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+  })
+  async whoAmI(
+    @inject(SecurityBindings.USER)
+    currentUserProfile: UserProfile,
+  ): Promise<string> {
+    return currentUserProfile[securityId];
+  }
 
-  // @authenticate('jwt')
-  // @get('/whoAmI', {
+  // @post('/signup', {
   //   responses: {
   //     '200': {
-  //       description: 'Return current user',
+  //       description: 'User',
   //       content: {
   //         'application/json': {
   //           schema: {
-  //             type: 'string',
+  //             'x-ts-type': User,
   //           },
   //         },
   //       },
   //     },
   //   },
   // })
-  // async whoAmI(
-  //   @inject(SecurityBindings.USER)
-  //   currentUserProfile: UserProfile,
-  // ): Promise<string> {
-  //   return currentUserProfile[securityId];
+  // async signUp(
+  //   @requestBody({
+  //     content: {
+  //       'application/json': {
+  //         schema: getModelSchemaRef(NewUserRequest, {
+  //           title: 'NewUser',
+  //         }),
+  //       },
+  //     },
+  //   })
+  //   newUserRequest: NewUserRequest,
+  // ): Promise<User> {
+  //   const password = await hash(newUserRequest.password, await genSalt());
+  //   const savedUser = await this.userRepository.create(
+  //     _.omit(newUserRequest, 'password'),
+  //   );
+
+  //   await this.userRepository.userCredentials(savedUser.id).create({password});
+
+  //   return savedUser;
   // }
 
-  @post('/signup', {
+
+
+
+  @post('/customer/signup', {
     responses: {
       '200': {
-        description: 'User',
+        description: 'Customer',
         content: {
           'application/json': {
             schema: {
-              'x-ts-type': User,
+              'x-ts-type': Customer,
             },
           },
         },
@@ -161,43 +203,24 @@ export class CustomerController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(NewUserRequest, {
-            title: 'NewUser',
+          schema: getModelSchemaRef(NewCustomerRequest, {
+            title: 'NewCustomer',
           }),
         },
       },
     })
-    newUserRequest: NewUserRequest,
-  ): Promise<User> {
-    const password = await hash(newUserRequest.password, await genSalt());
-    const savedUser = await this.userRepository.create(
-      _.omit(newUserRequest, 'password'),
+    newCustomerRequest: NewCustomerRequest,
+  ): Promise<Customer> {
+    const password = await hash(newCustomerRequest.password, await genSalt());
+    const savedCustomer = await this.customerRepository.create(
+      _.omit(newCustomerRequest, 'password'),
     );
-
-    await this.userRepository.userCredentials(savedUser.id).create({password});
-
-    return savedUser;
+  
+    await this.customerRepository.customerCredentials(savedCustomer.id).create({password});
+  
+    return savedCustomer;
   }
 
-  //transaction linked to customer
-
-  // @get('/customers/{id}/transactions', {
-  //   responses: {
-  //     '200': {
-  //       description: 'Array of Customer\'s Transactions',
-  //       content: {
-  //         'application/json': {
-  //           schema: {type: 'array', items: getModelSchemaRef(Transaction)},
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-  // async getCustomerTransactions(
-  //   @param.path.string('id') customerId: typeof Customer.prototype.id,
-  // ): Promise<Transaction[]> {
-  //   return this.customerRepository.transactions(customerId);
-  // }
 
 
 
@@ -212,7 +235,18 @@ export class CustomerController {
 
 
 
-  // api for data manipulation
+
+
+
+
+
+
+
+
+
+
+
+
   @post('/customers')
   @response(200, {
     description: 'Customer model instance',
@@ -224,12 +258,12 @@ export class CustomerController {
         'application/json': {
           schema: getModelSchemaRef(Customer, {
             title: 'NewCustomer',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    customer: Omit<Customer, 'id'>,
+    customer: Customer,
   ): Promise<Customer> {
     return this.customerRepository.create(customer);
   }
@@ -292,7 +326,7 @@ export class CustomerController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Customer, {exclude: 'where'}) filter?: FilterExcludingWhere<Customer>
   ): Promise<Customer> {
     return this.customerRepository.findById(id, filter);
@@ -303,7 +337,7 @@ export class CustomerController {
     description: 'Customer PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -321,7 +355,7 @@ export class CustomerController {
     description: 'Customer PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() customer: Customer,
   ): Promise<void> {
     await this.customerRepository.replaceById(id, customer);
@@ -331,7 +365,7 @@ export class CustomerController {
   @response(204, {
     description: 'Customer DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.customerRepository.deleteById(id);
   }
 }

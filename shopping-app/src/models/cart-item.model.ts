@@ -3,23 +3,23 @@ import {Entity, model, property} from '@loopback/repository';
 @model()
 export class CartItem extends Entity {
   @property({
-    type: 'number',
+    type: 'string',
     id: true,
     generated: true,
   })
-  id?: number;
+  id?: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  cartId: number;
+  cartId: string;
 
   @property({
-    type: 'number',
+    type: 'string',
     required: true,
   })
-  productId: number;
+  productId: string;
 
   @property({
     type: 'number',

@@ -17,8 +17,6 @@ System -> User: Invalidate token
 User -> System: Request to login
 System -> User: Validate credentials
 System -> User: Return authentication token
-User -> System: Request to read transaction, billing of owner (include token)
-System -> User: Validate token and return requested data
 User -> System: Request to create/update/delete owner product (include token)
 System -> User: Validate token and perform requested operation
 User -> System: Request to logout

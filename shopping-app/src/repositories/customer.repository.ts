@@ -8,9 +8,6 @@ export class CustomerRepository extends DefaultCrudRepository<
   typeof Customer.prototype.id,
   CustomerRelations
 > {
-  transactions(customerId: number | undefined): import("@loopback/repository").Transaction[] | PromiseLike<import("@loopback/repository").Transaction[]> {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     @inject('datasources.Shopping_app_database') dataSource: ShoppingAppDatabaseDataSource,
   ) {

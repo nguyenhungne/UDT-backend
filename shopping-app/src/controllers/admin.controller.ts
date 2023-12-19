@@ -37,12 +37,12 @@ export class AdminController {
         'application/json': {
           schema: getModelSchemaRef(Admin, {
             title: 'NewAdmin',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    admin: Omit<Admin, 'id'>,
+    admin: Admin,
   ): Promise<Admin> {
     return this.adminRepository.create(admin);
   }
@@ -75,9 +75,6 @@ export class AdminController {
   ): Promise<Admin[]> {
     return this.adminRepository.find(filter);
   }
-  
-
-
 
   @patch('/admins')
   @response(200, {
@@ -108,7 +105,7 @@ export class AdminController {
     },
   })
   async findById(
-    @param.path.string('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Admin, {exclude: 'where'}) filter?: FilterExcludingWhere<Admin>
   ): Promise<Admin> {
     return this.adminRepository.findById(id, filter);
@@ -119,7 +116,7 @@ export class AdminController {
     description: 'Admin PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -137,7 +134,7 @@ export class AdminController {
     description: 'Admin PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() admin: Admin,
   ): Promise<void> {
     await this.adminRepository.replaceById(id, admin);
@@ -147,7 +144,7 @@ export class AdminController {
   @response(204, {
     description: 'Admin DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.adminRepository.deleteById(id);
   }
 }

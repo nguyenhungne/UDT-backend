@@ -37,12 +37,12 @@ export class AgencyController {
         'application/json': {
           schema: getModelSchemaRef(Agency, {
             title: 'NewAgency',
-            exclude: ['id'],
+            
           }),
         },
       },
     })
-    agency: Omit<Agency, 'id'>,
+    agency: Agency,
   ): Promise<Agency> {
     return this.agencyRepository.create(agency);
   }
@@ -105,7 +105,7 @@ export class AgencyController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @param.filter(Agency, {exclude: 'where'}) filter?: FilterExcludingWhere<Agency>
   ): Promise<Agency> {
     return this.agencyRepository.findById(id, filter);
@@ -116,7 +116,7 @@ export class AgencyController {
     description: 'Agency PATCH success',
   })
   async updateById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -134,7 +134,7 @@ export class AgencyController {
     description: 'Agency PUT success',
   })
   async replaceById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: string,
     @requestBody() agency: Agency,
   ): Promise<void> {
     await this.agencyRepository.replaceById(id, agency);
@@ -144,7 +144,7 @@ export class AgencyController {
   @response(204, {
     description: 'Agency DELETE success',
   })
-  async deleteById(@param.path.number('id') id: number): Promise<void> {
+  async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.agencyRepository.deleteById(id);
   }
 }
