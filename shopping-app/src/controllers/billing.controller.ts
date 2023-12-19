@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Billing} from '../models';
 import {BillingRepository} from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class BillingController {
   constructor(
@@ -26,6 +27,7 @@ export class BillingController {
     public billingRepository : BillingRepository,
   ) {}
 
+  @authenticate('jwt')
   @post('/billings')
   @response(200, {
     description: 'Billing model instance',
@@ -47,6 +49,7 @@ export class BillingController {
     return this.billingRepository.create(billing);
   }
 
+  @authenticate('jwt')
   @get('/billings/count')
   @response(200, {
     description: 'Billing model count',
@@ -58,6 +61,7 @@ export class BillingController {
     return this.billingRepository.count(where);
   }
 
+  @authenticate('jwt')
   @get('/billings')
   @response(200, {
     description: 'Array of Billing model instances',
@@ -76,6 +80,7 @@ export class BillingController {
     return this.billingRepository.find(filter);
   }
 
+  @authenticate('jwt')
   @patch('/billings')
   @response(200, {
     description: 'Billing PATCH success count',
@@ -95,6 +100,7 @@ export class BillingController {
     return this.billingRepository.updateAll(billing, where);
   }
 
+  @authenticate('jwt')
   @get('/billings/{id}')
   @response(200, {
     description: 'Billing model instance',
@@ -111,6 +117,7 @@ export class BillingController {
     return this.billingRepository.findById(id, filter);
   }
 
+  @authenticate('jwt')
   @patch('/billings/{id}')
   @response(204, {
     description: 'Billing PATCH success',
@@ -128,7 +135,8 @@ export class BillingController {
   ): Promise<void> {
     await this.billingRepository.updateById(id, billing);
   }
-
+  
+  @authenticate('jwt')
   @put('/billings/{id}')
   @response(204, {
     description: 'Billing PUT success',
@@ -140,6 +148,7 @@ export class BillingController {
     await this.billingRepository.replaceById(id, billing);
   }
 
+  @authenticate('jwt')
   @del('/billings/{id}')
   @response(204, {
     description: 'Billing DELETE success',

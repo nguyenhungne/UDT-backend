@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Transaction} from '../models';
 import {TransactionRepository} from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class TransactionController {
   constructor(
@@ -26,6 +27,8 @@ export class TransactionController {
     public transactionRepository : TransactionRepository,
   ) {}
 
+
+  @authenticate('jwt')
   @post('/transactions')
   @response(200, {
     description: 'Transaction model instance',
@@ -47,6 +50,7 @@ export class TransactionController {
     return this.transactionRepository.create(transaction);
   }
 
+  @authenticate('jwt')
   @get('/transactions/count')
   @response(200, {
     description: 'Transaction model count',
@@ -58,6 +62,7 @@ export class TransactionController {
     return this.transactionRepository.count(where);
   }
 
+  @authenticate('jwt')
   @get('/transactions')
   @response(200, {
     description: 'Array of Transaction model instances',
@@ -76,6 +81,7 @@ export class TransactionController {
     return this.transactionRepository.find(filter);
   }
 
+  @authenticate('jwt')
   @patch('/transactions')
   @response(200, {
     description: 'Transaction PATCH success count',
@@ -95,6 +101,7 @@ export class TransactionController {
     return this.transactionRepository.updateAll(transaction, where);
   }
 
+  @authenticate('jwt')
   @get('/transactions/{id}')
   @response(200, {
     description: 'Transaction model instance',
@@ -111,6 +118,7 @@ export class TransactionController {
     return this.transactionRepository.findById(id, filter);
   }
 
+  @authenticate('jwt')
   @patch('/transactions/{id}')
   @response(204, {
     description: 'Transaction PATCH success',
@@ -129,6 +137,7 @@ export class TransactionController {
     await this.transactionRepository.updateById(id, transaction);
   }
 
+  @authenticate('jwt')
   @put('/transactions/{id}')
   @response(204, {
     description: 'Transaction PUT success',
@@ -140,6 +149,7 @@ export class TransactionController {
     await this.transactionRepository.replaceById(id, transaction);
   }
 
+  @authenticate('jwt')
   @del('/transactions/{id}')
   @response(204, {
     description: 'Transaction DELETE success',

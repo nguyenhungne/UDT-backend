@@ -9,6 +9,9 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
+import { AuthenticationComponent } from '@loopback/authentication';
+import { JWTAuthenticationComponent, UserServiceBindings } from '@loopback/authentication-jwt';
+import { ShoppingAppDatabaseDataSource } from './datasources';
 
 export {ApplicationConfig};
 
@@ -29,6 +32,16 @@ export class ShoppingAppApplication extends BootMixin(
       path: '/explorer',
     });
     this.component(RestExplorerComponent);
+
+
+    // ------ ADD SNIPPET AT THE BOTTOM ---------
+    // Mount authentication system
+    this.component(AuthenticationComponent);
+    // Mount jwt component
+    this.component(JWTAuthenticationComponent);
+    // Bind datasource
+    this.dataSource(ShoppingAppDatabaseDataSource, UserServiceBindings.DATASOURCE_NAME);
+    // ------------- END OF SNIPPET -------------
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here

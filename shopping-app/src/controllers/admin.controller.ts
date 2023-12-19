@@ -75,6 +75,9 @@ export class AdminController {
   ): Promise<Admin[]> {
     return this.adminRepository.find(filter);
   }
+  
+
+
 
   @patch('/admins')
   @response(200, {
@@ -105,7 +108,7 @@ export class AdminController {
     },
   })
   async findById(
-    @param.path.number('id') id: number,
+    @param.path.string('id') id: number,
     @param.filter(Admin, {exclude: 'where'}) filter?: FilterExcludingWhere<Admin>
   ): Promise<Admin> {
     return this.adminRepository.findById(id, filter);
