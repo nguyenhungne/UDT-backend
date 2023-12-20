@@ -32,7 +32,7 @@ import _ from 'lodash';
 import {TransactionRepository, BillingRepository, AgencyRepository, TokenRepository} from '../repositories';
 @model()
 //newCustomerRequest
-export class NewCustomerRequest extends Customer {
+export class NewCustomerRequest extends User {
   @property({
     type: 'string',
     required: true,
@@ -154,12 +154,12 @@ export class CustomerController {
     newCustomerRequest: NewCustomerRequest,
   ): Promise<User> {
     const password = await hash(newCustomerRequest.password, await genSalt());
+    if (!newCustomerRequest.role) {
+      newCustomerRequest.role = 'customer';
+    }
     const savedUser = await this.userRepository.create(_.omit(newCustomerRequest, 'password'));
 
     await this.userRepository.userCredentials(savedUser.id).create({password});
-
-    const newCustomer = _.omit(newCustomerRequest, 'password');
-    await this.customerRepository.create(newCustomer);
 
     return savedUser;
   }

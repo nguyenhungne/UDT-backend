@@ -66,7 +66,7 @@ export class AdminController {
     public adminRepository : AdminRepository,
   ) {}
 
-  @post('/customer/login', {
+  @post('/admin/login', {
     responses: {
       '200': {
         description: 'Token',
@@ -103,15 +103,8 @@ export class AdminController {
     return {token};
   }
 
-
-
-
-
-
-
-
   @authenticate({strategy: 'jwt'})
-  @post('/customers/logout')
+  @post('/admin/logout')
   @response(204, {
     description: 'Customer logout success',
   })
@@ -125,7 +118,6 @@ export class AdminController {
       throw new Error('No token found');
     }
   }
-
 
   @post('/admins')
   @response(200, {

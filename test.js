@@ -596,7 +596,19 @@ function a0_0x4ea09f(_0x11fc43) {
 //           - User can store auth state after reopen browser.
 //       2. Using solution on question 1, implements loopback4 for these features.
 //       3. What's the strong and weak point of your solution? How to improve that?
+//       Strengths:
+//       - Easy to use:
+//          + Admin use AdminController to manage all the data of the system.
+//          + Customer use CustomerController to manage all the data of the system.
+//          + Agency use AgencyController to manage all the data of the system.
+
+//        Weak:
+//          + Font end must know who is the user to call the correct controller.
 //       4. Write sequence diagram to build a solution for testing, ensure correct permission scalable from 100 APIs to 1000 APIs.
+//       - Sign up admin, customer, agency
+//       - Login admin, customer, agency
+//       - Create, Read, Update, Delete with api each controller admin, customer, agency
+//       - Logout admin, customer, agency
 
 //     SECTION III: Good job, right now our application needs to synchronize products, pricing of the Agency by using third-party API. 
 //       1. Write sequence diagram to build a solution to save, merge products data from third-party API to our database. (Third-party API data change every hour)

@@ -29,7 +29,7 @@ import { genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
 
 @model()
-export class NewUserRequest extends Agency {
+export class NewUserRequest extends User {
   @property({
     type: 'string',
     required: true,
@@ -86,7 +86,7 @@ export class AgencyController {
 
 
 
-  @post('/customer/login', {
+  @post('/agency/login', {
     responses: {
       '200': {
         description: 'Token',
@@ -151,20 +151,21 @@ export class AgencyController {
     })
     newUserRequest: NewUserRequest,
   ): Promise<User> {
+    if (!newUserRequest.role) {
+      newUserRequest.role = 'agency';
+    }
     const password = await hash(newUserRequest.password, await genSalt());
     const savedUser = await this.userRepository.create(_.omit(newUserRequest, 'password'));
 
-    await this.userRepository.userCredentials(savedUser.id).create({password});
 
-    const newCustomer = _.omit(newUserRequest, 'password');
-    await this.agencyRepository.create(newCustomer);
+    await this.userRepository.userCredentials(savedUser.id).create({password});
 
     return savedUser;
   }
 
 
   @authenticate({strategy: 'jwt'})
-  @post('/customers/logout')
+  @post('/agency/logout')
   @response(204, {
     description: 'Customer logout success',
   })
@@ -178,18 +179,6 @@ export class AgencyController {
       throw new Error('No token found');
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
   @post('/agencies')
   @response(200, {
