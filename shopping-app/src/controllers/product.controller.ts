@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Product} from '../models';
 import {ProductRepository} from '../repositories';
+import { authenticate } from '@loopback/authentication';
 
 export class ProductController {
   constructor(
@@ -26,6 +27,10 @@ export class ProductController {
     public productRepository : ProductRepository,
   ) {}
 
+
+
+
+  @authenticate('jwt')
   @post('/products')
   @response(200, {
     description: 'Product model instance',
@@ -47,6 +52,8 @@ export class ProductController {
     return this.productRepository.create(product);
   }
 
+
+  @authenticate('jwt')
   @get('/products/count')
   @response(200, {
     description: 'Product model count',
@@ -58,6 +65,7 @@ export class ProductController {
     return this.productRepository.count(where);
   }
 
+  @authenticate('jwt')
   @get('/products')
   @response(200, {
     description: 'Array of Product model instances',
@@ -76,6 +84,8 @@ export class ProductController {
     return this.productRepository.find(filter);
   }
 
+
+  @authenticate('jwt')
   @patch('/products')
   @response(200, {
     description: 'Product PATCH success count',
@@ -95,6 +105,8 @@ export class ProductController {
     return this.productRepository.updateAll(product, where);
   }
 
+
+  @authenticate('jwt')
   @get('/products/{id}')
   @response(200, {
     description: 'Product model instance',
@@ -111,6 +123,7 @@ export class ProductController {
     return this.productRepository.findById(id, filter);
   }
 
+  @authenticate('jwt')
   @patch('/products/{id}')
   @response(204, {
     description: 'Product PATCH success',
@@ -129,6 +142,8 @@ export class ProductController {
     await this.productRepository.updateById(id, product);
   }
 
+
+  @authenticate('jwt')
   @put('/products/{id}')
   @response(204, {
     description: 'Product PUT success',
@@ -140,6 +155,8 @@ export class ProductController {
     await this.productRepository.replaceById(id, product);
   }
 
+
+  @authenticate('jwt')
   @del('/products/{id}')
   @response(204, {
     description: 'Product DELETE success',

@@ -8,6 +8,26 @@ export class TransactionRepository extends DefaultCrudRepository<
   typeof Transaction.prototype.id,
   TransactionRelations
 > {
+  async findTransactionsByCustomerIdAndProductId(customerId: string, productId: string): Promise<Transaction[]> {
+    return this.find({
+      where: {
+        and: [
+          {customerId: customerId},
+          {productId: productId}
+        ]
+      }
+    });
+  }
+
+  async findTransactionsByCustomerId(customerId: string): Promise<Transaction[]> {
+    return this.find({
+      where: {
+        and: [
+          {customerId: customerId},
+        ]
+      }
+    });
+  }
   constructor(
     @inject('datasources.Shopping_app_database') dataSource: ShoppingAppDatabaseDataSource,
   ) {

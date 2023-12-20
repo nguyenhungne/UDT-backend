@@ -33,6 +33,12 @@ export class Transaction extends Entity {
   })
   billingId: string;
 
+  @property({
+    type: 'number',
+    required: true,
+  })
+  price: number;
+
 
   constructor(data?: Partial<Transaction>) {
     super(data);

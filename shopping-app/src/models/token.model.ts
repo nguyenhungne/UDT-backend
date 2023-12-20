@@ -1,7 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model()
-export class Billing extends Entity {
+export class Token extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -13,28 +13,22 @@ export class Billing extends Entity {
     type: 'string',
     required: true,
   })
-  customerId: string;
+  userId: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  productId: string;
-
-  @property({
-    type: 'number',
-    required: true,
-  })
-  total: number;
+  tokenValue: string;
 
 
-  constructor(data?: Partial<Billing>) {
+  constructor(data?: Partial<Token>) {
     super(data);
   }
 }
 
-export interface BillingRelations {
+export interface TokenRelations {
   // describe navigational properties here
 }
 
-export type BillingWithRelations = Billing & BillingRelations;
+export type TokenWithRelations = Token & TokenRelations;

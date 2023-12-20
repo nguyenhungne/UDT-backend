@@ -20,7 +20,7 @@ import {
   response,
   SchemaObject,
 } from '@loopback/rest';
-import {Customer} from '../models';
+import {Agency, Billing, Customer, Transaction} from '../models';
 import {CustomerRepository} from '../repositories';
 import { Credentials, MyUserService, TokenServiceBindings, User, UserRepository, UserServiceBindings } from '@loopback/authentication-jwt';
 import { inject } from '@loopback/core';
@@ -30,9 +30,9 @@ import { UserProfile } from '@loopback/security';
 import { securityId } from '@loopback/security';
 import { genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
-
+import {TransactionRepository, BillingRepository, AgencyRepository, TokenRepository} from '../repositories';
 @model()
-export class NewUserRequest extends User {
+export class NewUserRequest extends Customer {
   @property({
     type: 'string',
     required: true,
@@ -52,11 +52,11 @@ export class NewCustomerRequest extends Customer {
 
 const CredentialsSchema: SchemaObject = {
   type: 'object',
-  required: [ 'password', "username"],
+  required: ["email", 'password'],
   properties: {
-    username: {
+    email: {
       type: 'string',
-      format: 'username',
+      format: 'email',
     },
     password: {
       type: 'string',
@@ -83,16 +83,21 @@ export class CustomerController {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public jwtService: TokenService,
+    
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
     @inject(SecurityBindings.USER, {optional: true})
     public user: UserProfile,
     @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(TransactionRepository) protected transactionRepository: TransactionRepository,
+    @repository(BillingRepository) protected billingRepository: BillingRepository,
+    @repository(TokenRepository) protected tokenRepository: TokenRepository,
+    @repository(AgencyRepository) protected agencyRepository: AgencyRepository,
     @repository(CustomerRepository)
     public customerRepository : CustomerRepository,
   ) {}
 
-  @post('/users/login', {
+  @post('/customer/login', {
     responses: {
       '200': {
         description: 'Token',
@@ -121,78 +126,24 @@ export class CustomerController {
 
     // create a JSON Web Token based on the user profile
     const token = await this.jwtService.generateToken(userProfile);
+    const newUser = {
+      userId: user.id,
+      tokenValue: token,
+    }
+    await this.tokenRepository.create(newUser); 
     return {token};
   }
 
-  @authenticate('jwt')
-  @get('/whoAmI', {
-    responses: {
-      '200': {
-        description: 'Return current user',
-        content: {
-          'application/json': {
-            schema: {
-              type: 'string',
-            },
-          },
-        },
-      },
-    },
-  })
-  async whoAmI(
-    @inject(SecurityBindings.USER)
-    currentUserProfile: UserProfile,
-  ): Promise<string> {
-    return currentUserProfile[securityId];
-  }
 
-  // @post('/signup', {
-  //   responses: {
-  //     '200': {
-  //       description: 'User',
-  //       content: {
-  //         'application/json': {
-  //           schema: {
-  //             'x-ts-type': User,
-  //           },
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-  // async signUp(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(NewUserRequest, {
-  //           title: 'NewUser',
-  //         }),
-  //       },
-  //     },
-  //   })
-  //   newUserRequest: NewUserRequest,
-  // ): Promise<User> {
-  //   const password = await hash(newUserRequest.password, await genSalt());
-  //   const savedUser = await this.userRepository.create(
-  //     _.omit(newUserRequest, 'password'),
-  //   );
-
-  //   await this.userRepository.userCredentials(savedUser.id).create({password});
-
-  //   return savedUser;
-  // }
-
-
-
-
+  //authenticate({strategy: 'jwt'})
   @post('/customer/signup', {
     responses: {
       '200': {
-        description: 'Customer',
+        description: 'User',
         content: {
           'application/json': {
             schema: {
-              'x-ts-type': Customer,
+              'x-ts-type': User,
             },
           },
         },
@@ -203,50 +154,117 @@ export class CustomerController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(NewCustomerRequest, {
-            title: 'NewCustomer',
+          schema: getModelSchemaRef(NewUserRequest, {
+            title: 'NewUser',
           }),
         },
       },
     })
-    newCustomerRequest: NewCustomerRequest,
-  ): Promise<Customer> {
-    const password = await hash(newCustomerRequest.password, await genSalt());
-    const savedCustomer = await this.customerRepository.create(
-      _.omit(newCustomerRequest, 'password'),
-    );
-  
-    await this.customerRepository.customerCredentials(savedCustomer.id).create({password});
-  
-    return savedCustomer;
+    newUserRequest: NewUserRequest,
+  ): Promise<User> {
+    const password = await hash(newUserRequest.password, await genSalt());
+    const savedUser = await this.userRepository.create(_.omit(newUserRequest, 'password'));
+
+    await this.userRepository.userCredentials(savedUser.id).create({password});
+
+    const newCustomer = _.omit(newUserRequest, 'password');
+    await this.customerRepository.create(newCustomer);
+
+    return savedUser;
   }
 
 
+//find transactions by customer id  
+@authenticate({strategy: 'jwt'})
+@get('/customers/{id}/transactions')
+@response(200, {
+  description: 'Array of Customer model instances',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'array',
+        items: getModelSchemaRef(Transaction),
+      },
+    },
+  },
+})
+async findTransactionsByCustomerId(
+  @param.path.string('id') customerId: string,
+): Promise<Transaction[]> {
+  // Assuming you have a transactionRepository that has a findTransactionsByProductId method
+  return this.transactionRepository.findTransactionsByCustomerId(customerId);
+}
 
+//find billing by customer id
+@authenticate({strategy: 'jwt'})
+@get('/customers/{id}/billing')
+@response(200, {
+  description: 'Array of Customer model instances',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'array',
+        items: getModelSchemaRef(Billing),
+      },
+    },
+  },
+})
+async findBillingByCustomerId(
+  @param.path.string('id') customerId: string,
+): Promise<Billing[]> {
+  // Assuming you have a transactionRepository that has a findTransactionsByProductId method
+  return this.billingRepository.findBillingByCustomerId(customerId);
+}
 
+@authenticate({strategy: 'jwt'})
+@get('/customers/{id}/product-details,{productId}')
+@response(200, {
+  description: 'Product details for a customer',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        properties: {
+          transactions: {
+            type: 'array',
+            items: getModelSchemaRef(Transaction),
+          },
+          billings: {
+            type: 'array',
+            items: getModelSchemaRef(Billing),
+          },
+        },
+      },
+    },
+  },
+})
+async findProductDetails(
+  @param.path.string('id') customerId: string,
+  @param.query.string('productId') productId: string,
+): Promise<{transactions: Transaction[], billings: Billing[]}> {
+  const transactions = await this.transactionRepository.findTransactionsByCustomerIdAndProductId(customerId, productId);
+  const billings = await this.billingRepository.findBillingByCustomerIdAndProductId(customerId, productId);
 
+  return {transactions, billings};
+}
 
+@authenticate({strategy: 'jwt'})
+@post('/customers/logout')
+@response(204, {
+  description: 'Customer logout success',
+})
+async logout(
+  @param.header.string('Authorization') authHeader: string,
+): Promise<void> {
+  const token = authHeader.replace('Bearer ', '');
+  if (token) {
+    this.tokenRepository.deleteAll({tokenValue: token});
+  } else {
+    throw new Error('No token found');
+  }
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
   @post('/customers')
   @response(200, {
     description: 'Customer model instance',

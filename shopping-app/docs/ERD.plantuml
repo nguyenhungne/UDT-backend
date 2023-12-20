@@ -31,12 +31,14 @@ entity "Transaction" as transaction {
   # agencyId: string (FK)
   # productId: string (FK)
   # billingId: string (FK)
+  price: number
 }
 
 entity "Billing" as billing {
   + id: string (PK)
   ---
   # customerId: string (FK)
+  # productId: string (FK)
   total: number
 }
 

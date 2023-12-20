@@ -3,6 +3,8 @@ import {
   CountSchema,
   Filter,
   FilterExcludingWhere,
+  model,
+  property,
   repository,
   Where,
 } from '@loopback/repository';
@@ -16,15 +18,130 @@ import {
   del,
   requestBody,
   response,
+  SchemaObject,
 } from '@loopback/rest';
 import {Admin} from '../models';
-import {AdminRepository} from '../repositories';
+import {AdminRepository, TokenRepository} from '../repositories';
+import { Credentials, MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
+import { inject } from '@loopback/core';
+import { TokenService } from '@loopback/authentication';
+import {authenticate} from '@loopback/authentication';
+
+
+
+@model()
+export class NewUserRequest extends Admin {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+}
+
+export class NewAgencyRequest extends Admin {
+  @property({
+    type: 'string',
+    required: true,
+  })
+  password: string;
+}
+
+const CredentialsSchema: SchemaObject = {
+  type: 'object',
+  required: ["email", 'password'],
+  properties: {
+    email: {
+      type: 'string',
+      format: 'email',
+    },
+    password: {
+      type: 'string',
+      minLength: 8,
+    },
+  },
+};
+
+
+export const CredentialsRequestBody = {
+  description: 'The input of login function',
+  required: true,
+  content: {
+    'application/json': {schema: CredentialsSchema},
+  },
+};
+
 
 export class AdminController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
+    @repository(TokenRepository) public tokenRepository: TokenRepository,
     @repository(AdminRepository)
     public adminRepository : AdminRepository,
   ) {}
+
+  @post('/customer/login', {
+    responses: {
+      '200': {
+        description: 'Token',
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                token: {
+                  type: 'string',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+  async login(
+    @requestBody(CredentialsRequestBody) credentials: Credentials,
+  ): Promise<{token: string}> {
+    // ensure the user exists, and the password is correct
+    const user = await this.userService.verifyCredentials(credentials);
+    // convert a User object into a UserProfile object (reduced set of properties)
+    const userProfile = this.userService.convertToUserProfile(user);
+
+    // create a JSON Web Token based on the user profile
+    const token = await this.jwtService.generateToken(userProfile);
+    const newUser = {
+      userId: user.id,
+      tokenValue: token,
+    }
+    await this.tokenRepository.create(newUser); 
+    return {token};
+  }
+
+
+
+
+
+
+
+
+  @authenticate({strategy: 'jwt'})
+  @post('/customers/logout')
+  @response(204, {
+    description: 'Customer logout success',
+  })
+  async logout(
+    @param.header.string('Authorization') authHeader: string,
+  ): Promise<void> {
+    const token = authHeader.replace('Bearer ', '');
+    if (token) {
+      this.tokenRepository.deleteAll({tokenValue: token});
+    } else {
+      throw new Error('No token found');
+    }
+  }
+
 
   @post('/admins')
   @response(200, {
