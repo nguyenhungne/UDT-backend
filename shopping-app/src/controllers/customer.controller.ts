@@ -27,19 +27,10 @@ import { inject } from '@loopback/core';
 import { authenticate, TokenService } from '@loopback/authentication';
 import { SecurityBindings } from '@loopback/security';
 import { UserProfile } from '@loopback/security';
-import { securityId } from '@loopback/security';
 import { genSalt, hash } from 'bcryptjs';
 import _ from 'lodash';
 import {TransactionRepository, BillingRepository, AgencyRepository, TokenRepository} from '../repositories';
 @model()
-export class NewUserRequest extends Customer {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-}
-
 //newCustomerRequest
 export class NewCustomerRequest extends Customer {
   @property({
@@ -154,20 +145,20 @@ export class CustomerController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(NewUserRequest, {
+          schema: getModelSchemaRef(NewCustomerRequest, {
             title: 'NewUser',
           }),
         },
       },
     })
-    newUserRequest: NewUserRequest,
+    newCustomerRequest: NewCustomerRequest,
   ): Promise<User> {
-    const password = await hash(newUserRequest.password, await genSalt());
-    const savedUser = await this.userRepository.create(_.omit(newUserRequest, 'password'));
+    const password = await hash(newCustomerRequest.password, await genSalt());
+    const savedUser = await this.userRepository.create(_.omit(newCustomerRequest, 'password'));
 
     await this.userRepository.userCredentials(savedUser.id).create({password});
 
-    const newCustomer = _.omit(newUserRequest, 'password');
+    const newCustomer = _.omit(newCustomerRequest, 'password');
     await this.customerRepository.create(newCustomer);
 
     return savedUser;

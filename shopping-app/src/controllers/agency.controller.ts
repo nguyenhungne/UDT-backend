@@ -61,7 +61,7 @@ const CredentialsSchema: SchemaObject = {
 };
 
 
-export const CredentialsRequestBody = {
+export const AgencyCredentialsRequestBody = {
   description: 'The input of login function',
   required: true,
   content: {
@@ -106,7 +106,7 @@ export class AgencyController {
     },
   })
   async login(
-    @requestBody(CredentialsRequestBody) credentials: Credentials,
+    @requestBody(AgencyCredentialsRequestBody) credentials: Credentials,
   ): Promise<{token: string}> {
     // ensure the user exists, and the password is correct
     const user = await this.userService.verifyCredentials(credentials);

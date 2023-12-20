@@ -29,22 +29,6 @@ import {authenticate} from '@loopback/authentication';
 
 
 
-@model()
-export class NewUserRequest extends Admin {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-}
-
-export class NewAgencyRequest extends Admin {
-  @property({
-    type: 'string',
-    required: true,
-  })
-  password: string;
-}
 
 const CredentialsSchema: SchemaObject = {
   type: 'object',
@@ -62,7 +46,7 @@ const CredentialsSchema: SchemaObject = {
 };
 
 
-export const CredentialsRequestBody = {
+export const AminCredentialsRequestBody = {
   description: 'The input of login function',
   required: true,
   content: {
@@ -102,7 +86,7 @@ export class AdminController {
     },
   })
   async login(
-    @requestBody(CredentialsRequestBody) credentials: Credentials,
+    @requestBody(AminCredentialsRequestBody) credentials: Credentials,
   ): Promise<{token: string}> {
     // ensure the user exists, and the password is correct
     const user = await this.userService.verifyCredentials(credentials);
