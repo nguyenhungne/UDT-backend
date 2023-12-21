@@ -123,22 +123,31 @@
 //       3. What's the strong and weak point of your solution? How to improve that?
 //       Strengths:
 //          Strengths:
-//          - Easy to use:
-//            + Admin use AdminController to manage all the data of the system.
-//            + Customer use CustomerController to manage all the data of the system.
-//            + Agency use AgencyController to manage all the data of the system.
-//          Weak:
-//       - Easy to use:
-//        Weak:
+//          - Split controller into many controller, easy to manage.
+//          - Easy to scale.
+//          - Easy to test.
+//          - Easy to use.
+//       Weak:
+//          - Hard to understand system beacause of many controller.
 //       4. Write sequence diagram to build a solution for testing, ensure correct permission scalable from 100 APIs to 1000 APIs.
 //       - Sign up admin, customer, agency
 //       - Login admin, customer, agency
 //       - Create, Read, Update, Delete with api each controller admin, customer, agency
 //       - Logout admin, customer, agency
-
 //     SECTION III: Good job, right now our application needs to synchronize products, pricing of the Agency by using third-party API. 
 //       1. Write sequence diagram to build a solution to save, merge products data from third-party API to our database. (Third-party API data change every hour)
 //       2. What's the strong and weak point of your solution? How to improve that?
+//       Strong Points:
+//          - Automated: The solution is automated, which means it doesn't require manual intervention to fetch and merge data.
+//          - Consistent: By using a scheduler, the solution ensures that data is fetched and updated consistently at regular intervals.
+//       Weak Points:
+//          - Dependency on Third-Party API: The solution is heavily dependent on the third-party API. If the third-party API is down or changes its data structure, the solution will fail.
+//          - No Error Handling: The current solution does not account for any errors that might occur during the process.
+//       Improvements:
+//           - Error Handling: Implement error handling to manage issues that might occur when fetching data from the third-party API or when merging data into the database.
+//           - Data Validation: Before merging data into the database, validate the data to ensure its integrity.
+//           - Fallback Mechanism: Implement a fallback mechanism in case the third-party API is down. This could be using cached data or switching to a backup API.
+//           - Notification System: Implement a notification system to alert relevant parties when an error occurs or when the process completes successfully.
 //     SECTION IV:
 //       1. Write an architecture diagram to build a solution adapt the list of features below.
 //         + Ensure isolating development and production data. (Don't merge data together)

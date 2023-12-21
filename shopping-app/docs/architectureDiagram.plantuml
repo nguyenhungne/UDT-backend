@@ -1,0 +1,21 @@
+@startuml
+package "Development Environment" {
+  [Development Database]
+  [Development Application]
+}
+
+package "Production Environment" {
+  [Production Database]
+  [Production Application]
+}
+
+[Git Repository] --> [Development Application]
+[Git Repository] --> [Production Application]
+
+[GitLab CI / GitHub Actions] --> [Git Repository]
+
+[Development Application] --> [Development Database]
+[Production Application] --> [Production Database]
+
+[Heroku] --> [Production Application]
+@enduml

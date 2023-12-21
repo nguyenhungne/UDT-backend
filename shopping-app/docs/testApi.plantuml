@@ -1,0 +1,39 @@
+@startuml
+participant "Admin" as A
+participant "Customer" as C
+participant "Agency" as Ag
+participant "API" as API
+
+A -> API: Sign up
+API -> A: Confirmation
+A -> API: Login
+API -> A: Authentication token
+
+C -> API: Sign up
+API -> C: Confirmation
+C -> API: Login
+API -> C: Authentication token
+
+Ag -> API: Sign up
+API -> Ag: Confirmation
+Ag -> API: Login
+API -> Ag: Authentication token
+
+A -> API: Create/Read/Update/Delete (CRUD) operations
+API -> A: Operation result
+
+C -> API: CRUD operations
+API -> C: Operation result
+
+Ag -> API: CRUD operations
+API -> Ag: Operation result
+
+A -> API: Logout
+API -> A: Confirmation
+
+C -> API: Logout
+API -> C: Confirmation
+
+Ag -> API: Logout
+API -> Ag: Confirmation
+@enduml

@@ -1,15 +1,13 @@
 @startuml
-title Product Data Synchronization
+participant "Scheduler" as S
+participant "Third-party API" as TAPI
+participant "Our API" as OAPI
+participant "Database" as DB
 
-autonumber
-actor Scheduler
-participant "API Client" as Client
-database "Database Service" as DB
-actor "Third-party API" as API
-
-Scheduler -> Client: Trigger Sync
-Client -> API: Request Data
-API --> Client: Return Data
-Client -> DB: Send Data
-DB --> Client: Acknowledge Receipt
+S -> TAPI: Request product data
+TAPI -> S: Return product data
+S -> OAPI: Send product data
+OAPI -> DB: Merge product data
+DB -> OAPI: Confirmation
+OAPI -> S: Confirmation
 @enduml
