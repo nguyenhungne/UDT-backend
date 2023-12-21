@@ -16,57 +16,48 @@ import {
   del,
   requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
-import {Product} from '../models';
-import {ProductRepository} from '../repositories';
-import { authenticate } from '@loopback/authentication';
+import {Billing, Product, Transaction} from '../models';
+import {ProductRepository, TransactionRepository, BillingRepository} from '../repositories';
+import {authenticate, TokenService} from '@loopback/authentication';
+import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
+import { inject } from '@loopback/core';
+import { MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
 
 export class ProductController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
+    @repository(TransactionRepository) public transactionRepository: TransactionRepository,
+    @repository(BillingRepository) public billingRepository: BillingRepository,
     @repository(ProductRepository)
-    public productRepository : ProductRepository,
+    public ProductRepository : ProductRepository,
   ) {}
 
-
-
-
+  // lay 1 product cua 1 agency
   @authenticate('jwt')
-  @post('/products')
-  @response(200, {
-    description: 'Product model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Product)}},
+  @del('/agencies/{id}/products{productId}')
+  @response(204, {
+    description: 'Agency DELETE success',
   })
-  async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Product, {
-            title: 'NewProduct',
-            
-          }),
-        },
-      },
-    })
-    product: Product,
-  ): Promise<Product> {
-    return this.productRepository.create(product);
+  async deleteProductsOfAgency(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: string,
+    @param.path.string('productId') productId: string
+    ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    await this.ProductRepository.deleteAll({agencyId: id, id: productId});
   }
 
-
+  // lay danh sach cac product cua 1 agency
   @authenticate('jwt')
-  @get('/products/count')
-  @response(200, {
-    description: 'Product model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Product) where?: Where<Product>,
-  ): Promise<Count> {
-    return this.productRepository.count(where);
-  }
-
-  @authenticate('jwt')
-  @get('/products')
+  @get("/agency/{id}/products")
   @response(200, {
     description: 'Array of Product model instances',
     content: {
@@ -78,90 +69,118 @@ export class ProductController {
       },
     },
   })
-  async find(
+  async findProducts(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: string,
     @param.filter(Product) filter?: Filter<Product>,
   ): Promise<Product[]> {
-    return this.productRepository.find(filter);
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.ProductRepository.find({where: {agencyId: id}});
   }
 
-
+  // tao 1 product cua 1 agency
   @authenticate('jwt')
-  @patch('/products')
-  @response(200, {
-    description: 'Product PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Product, {partial: true}),
-        },
-      },
-    })
-    product: Product,
-    @param.where(Product) where?: Where<Product>,
-  ): Promise<Count> {
-    return this.productRepository.updateAll(product, where);
-  }
-
-
-  @authenticate('jwt')
-  @get('/products/{id}')
+  @post('/agency/{id}/products')
   @response(200, {
     description: 'Product model instance',
-    content: {
-      'application/json': {
-        schema: getModelSchemaRef(Product, {includeRelations: true}),
-      },
-    },
+    content: {'application/json': {schema: getModelSchemaRef(Product)}},
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Product, {exclude: 'where'}) filter?: FilterExcludingWhere<Product>
-  ): Promise<Product> {
-    return this.productRepository.findById(id, filter);
-  }
-
-  @authenticate('jwt')
-  @patch('/products/{id}')
-  @response(204, {
-    description: 'Product PATCH success',
-  })
-  async updateById(
-    @param.path.string('id') id: string,
+  async createProduct(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: typeof Product.prototype.id,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Product, {partial: true}),
+          schema: getModelSchemaRef(Product, {
+            title: 'NewProductInAgency',
+            exclude: ['id'],
+            optional: ['agencyId']
+          }),
         },
       },
-    })
-    product: Product,
-  ): Promise<void> {
-    await this.productRepository.updateById(id, product);
+    }) product: Omit<Product, 'id'>,
+  ): Promise<Product> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.ProductRepository.createProductOfAgency(id, product);
   }
 
-
+    // update 1 phan thong tin cua 1 product
   @authenticate('jwt')
-  @put('/products/{id}')
+  @patch('/agencies/{id}/products{productId}')
   @response(204, {
-    description: 'Product PUT success',
+    description: 'Agency PATCH success',
   })
-  async replaceById(
+  async updateProductsOfAgency(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('id') id: string,
+    @param.path.string('productId') productId: string,
+    @requestBody() product: Partial<Product>,
+  ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    await this.ProductRepository.updateAll(product, {agencyId: id, id: productId});
+  }
+
+  // update toan bo thong tin cua 1 product
+  @authenticate('jwt')
+  @put('/agencies/products{productId}')
+  @response(204, {  
+    description: 'Agency PUT success',
+  })
+  async replaceProductsOfAgency(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('productId') productId: string,
     @requestBody() product: Product,
   ): Promise<void> {
-    await this.productRepository.replaceById(id, product);
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    await this.ProductRepository.replaceById(productId, product);
   }
 
-
-  @authenticate('jwt')
-  @del('/products/{id}')
-  @response(204, {
-    description: 'Product DELETE success',
-  })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.productRepository.deleteById(id);
+  @authenticate({strategy: 'jwt'})
+@get('/customers/{id}/product-details,{productId}')
+@response(200, {
+  description: 'Product details for a customer',
+  content: {
+    'application/json': {
+      schema: {
+        type: 'object',
+        properties: {
+          transactions: {
+            type: 'array',
+            items: getModelSchemaRef(Transaction),
+          },
+          billings: {
+            type: 'array',
+            items: getModelSchemaRef(Billing),
+          },
+        },
+      },
+    },
+  },
+})
+async findProductDetails(
+  @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  @param.path.string('id') customerId: string,
+  @param.query.string('productId') productId: string,
+): Promise<{transactions: Transaction[], billings: Billing[]}> {
+  const user = await this.userService.findUserById(currentUserProfile[securityId]);
+  if (user.role !== 'customer') {
+    throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
   }
+  const transactions = await this.transactionRepository.findTransactionsByCustomerIdAndProductId(customerId, productId);
+  const billings = await this.billingRepository.findBillingByCustomerIdAndProductId(customerId, productId);
+
+  return {transactions, billings};
+}
 }

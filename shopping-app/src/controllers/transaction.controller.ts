@@ -1,150 +1,156 @@
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
-  post,
   param,
   get,
   getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
-import {Transaction} from '../models';
+import {Admin, Transaction} from '../models';
 import {TransactionRepository} from '../repositories';
+import { authenticate, TokenService } from '@loopback/authentication';
+import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
+import { inject } from '@loopback/core';
+import { MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
 
 export class TransactionController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
+    @repository(TransactionRepository) public transactionRelations: TransactionRepository,
     @repository(TransactionRepository)
     public transactionRepository : TransactionRepository,
   ) {}
 
-  @post('/transactions')
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactions')
   @response(200, {
-    description: 'Transaction model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Transaction)}},
-  })
-  async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Transaction, {
-            title: 'NewTransaction',
-            
-          }),
-        },
-      },
-    })
-    transaction: Transaction,
-  ): Promise<Transaction> {
-    return this.transactionRepository.create(transaction);
-  }
-
-  @get('/transactions/count')
-  @response(200, {
-    description: 'Transaction model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Transaction) where?: Where<Transaction>,
-  ): Promise<Count> {
-    return this.transactionRepository.count(where);
-  }
-
-  @get('/transactions')
-  @response(200, {
-    description: 'Array of Transaction model instances',
+    description: 'Admin model instance',
     content: {
       'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Transaction, {includeRelations: true}),
-        },
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
       },
     },
   })
-  async find(
-    @param.filter(Transaction) filter?: Filter<Transaction>,
+  async findTransactions(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<Transaction[]> {
-    return this.transactionRepository.find(filter);
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRepository.find();
   }
 
-  @patch('/transactions')
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsOfProduct/{productId}')
   @response(200, {
-    description: 'Transaction PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Transaction, {partial: true}),
-        },
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
       },
-    })
-    transaction: Transaction,
-    @param.where(Transaction) where?: Where<Transaction>,
-  ): Promise<Count> {
-    return this.transactionRepository.updateAll(transaction, where);
+    },
+  })
+  async findTransactionsByProductId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('productId') productId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRelations.find({
+      where: {
+        productId: productId,
+      },
+    });
   }
 
-  @get('/transactions/{id}')
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsPfAgency/{agencyId}')
   @response(200, {
-    description: 'Transaction model instance',
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findTransactionsByAgencyId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('agencyId') agencyId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRelations.find({
+      where: {
+        agencyId: agencyId,
+      },
+    });
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsOfCustomer/{customerId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findTransactionsByCustomerId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role == 'admin' || user.role == 'agency') {
+      return this.transactionRelations.find({
+        where: {
+          customerId: customerId,
+        },
+      });
+    } else {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+  }
+
+
+
+  @authenticate({strategy: 'jwt'})
+  @get('/customer/{customerId}/transactions/{id}/products/{productId}')
+  @response(200, {
+    description: 'Admin model instance',
     content: {
       'application/json': {
         schema: getModelSchemaRef(Transaction, {includeRelations: true}),
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Transaction, {exclude: 'where'}) filter?: FilterExcludingWhere<Transaction>
-  ): Promise<Transaction> {
-    return this.transactionRepository.findById(id, filter);
-  }
-
-  @patch('/transactions/{id}')
-  @response(204, {
-    description: 'Transaction PATCH success',
-  })
-  async updateById(
-    @param.path.string('id') id: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Transaction, {partial: true}),
+  async findTransactionsByCustomerIdAndProductId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+    @param.path.string('transactionId') id: string,
+    @param.path.string('productId') productId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role == 'customer') {
+      return this.transactionRepository.find({
+        where: {
+          id: id,
+          customerId: customerId,
+          productId: productId,
         },
-      },
-    })
-    transaction: Transaction,
-  ): Promise<void> {
-    await this.transactionRepository.updateById(id, transaction);
-  }
-
-  @put('/transactions/{id}')
-  @response(204, {
-    description: 'Transaction PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() transaction: Transaction,
-  ): Promise<void> {
-    await this.transactionRepository.replaceById(id, transaction);
-  }
-
-  @del('/transactions/{id}')
-  @response(204, {
-    description: 'Transaction DELETE success',
-  })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.transactionRepository.deleteById(id);
+      });
+    } else {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
   }
 }

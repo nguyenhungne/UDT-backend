@@ -1,235 +1,159 @@
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
-  post,
   param,
   get,
   getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
-import {Billing} from '../models';
+import {
+  Credentials,
+  MyUserService,
+  TokenServiceBindings,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
+import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
+import {Admin, Billing} from '../models';
 import {BillingRepository} from '../repositories';
-import { authenticate } from '@loopback/authentication';
+import { authenticate, TokenService } from '@loopback/authentication';
+import { inject } from '@loopback/core';
 
 export class BillingController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
     @repository(BillingRepository)
-    public billingRepository : BillingRepository,
+    public BillingRepository : BillingRepository,
   ) {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billings')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillings(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find();
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfProduct/{productId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillingByProductId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('productId') productId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        productId: productId,
+      },
+    });
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfAgency/{agencyId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillingByAgencyId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('agencyId') agencyId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        agencyId: agencyId,
+      },
+    });
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfCustomer/{customerId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillingByCustomerId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        customerId: customerId,
+      },
+    });
+  }
 
   
-
-  // @authenticate('jwt')
-  // @post('/billings')
-  // @response(200, {
-  //   description: 'Billing model instance',
-  //   content: {'application/json': {schema: getModelSchemaRef(Billing)}},
-  // })
-  // async create(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Billing, {
-  //           title: 'NewBilling',
-            
-  //         }),
-  //       },
-  //     },
-  //   })
-  //   billing: Billing,
-  // ): Promise<Billing> {
-  //   return this.billingRepository.create(billing);
-  // }
-
-  // @authenticate('jwt')
-  // @get('/billings/count')
-  // @response(200, {
-  //   description: 'Billing model count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async count(
-  //   @param.where(Billing) where?: Where<Billing>,
-  // ): Promise<Count> {
-  //   return this.billingRepository.count(where);
-  // }
+  @authenticate({strategy: 'jwt'})
+  @get('/customer/{customerId}/billings/{id}/product/{productId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillingById(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+    @param.path.string('productId') productId: string,
+    @param.path.string('id') id: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'customer') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        id: id,
+        customerId: customerId,
+        productId: productId,
+      },
+    });
+  }
 
 
-  // @authenticate('jwt')
-  // @get('/billings')
-  // @response(200, {
-  //   description: 'Array of Billing model instances',
-  //   content: {
-  //     'application/json': {
-  //       schema: {
-  //         type: 'array',
-  //         items: getModelSchemaRef(Billing, {includeRelations: true}),
-  //       },
-  //     },
-  //   },
-  // })
-  // async find(
-  //   @param.filter(Billing) filter?: Filter<Billing>,
-  // ): Promise<Billing[]> {
-  //   return this.billingRepository.find(filter);
-  // }
-
-  // @patch('/billings')
-  // @response(200, {
-  //   description: 'Billing PATCH success count',
-  //   content: {'application/json': {schema: CountSchema}},
-  // })
-  // async updateAll(
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Billing, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   billing: Billing,
-  //   @param.where(Billing) where?: Where<Billing>,
-  // ): Promise<Count> {
-  //   return this.billingRepository.updateAll(billing, where);
-  // }
-
-
-
-  // @authenticate('jwt')
-  // @get('/billings/{id}')
-  // @response(200, {
-  //   description: 'Billing model instance',
-  //   content: {
-  //     'application/json': {
-  //       schema: getModelSchemaRef(Billing, {includeRelations: true}),
-  //     },
-  //   },
-  // })
-  // async findById(
-  //   @param.path.string('id') id: string,
-  //   @param.filter(Billing, {exclude: 'where'}) filter?: FilterExcludingWhere<Billing>
-  // ): Promise<Billing> {
-  //   return this.billingRepository.findById(id, filter);
-  // }
-
-
-
-  // @authenticate('jwt')
-  // @patch('/billings/{id}')
-  // @response(204, {
-  //   description: 'Billing PATCH success',
-  // })
-  // async updateById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody({
-  //     content: {
-  //       'application/json': {
-  //         schema: getModelSchemaRef(Billing, {partial: true}),
-  //       },
-  //     },
-  //   })
-  //   billing: Billing,
-  // ): Promise<void> {
-  //   await this.billingRepository.updateById(id, billing);
-  // }
-
-
-
-  // @authenticate('jwt')
-  // @put('/billings/{id}')
-  // @response(204, {
-  //   description: 'Billing PUT success',
-  // })
-  // async replaceById(
-  //   @param.path.string('id') id: string,
-  //   @requestBody() billing: Billing,
-  // ): Promise<void> {
-  //   await this.billingRepository.replaceById(id, billing);
-  // }
-
-
-
-  // @authenticate('jwt')
-  // @del('/billings/{id}')
-  // @response(204, {
-  //   description: 'Billing DELETE success',
-  // })
-  // async deleteById(@param.path.string('id') id: string): Promise<void> {
-  //   await this.billingRepository.deleteById(id);
-  // }
 }

@@ -1,101 +1,52 @@
 import {
-  Count,
-  CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
   param,
   get,
   getModelSchemaRef,
-  patch,
-  put,
   del,
-  requestBody,
   response,
+  HttpErrors,
 } from '@loopback/rest';
 import {Cart} from '../models';
 import {CartRepository} from '../repositories';
+import { authenticate, TokenService } from '@loopback/authentication';
+import { inject } from '@loopback/core';
+import { MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
+import { UserProfile, SecurityBindings, securityId } from '@loopback/security';
 
 export class CartController {
   constructor(
+    @inject(TokenServiceBindings.TOKEN_SERVICE)
+    public jwtService: TokenService,
+    @inject(UserServiceBindings.USER_SERVICE)
+    public userService: MyUserService,
     @repository(CartRepository)
     public cartRepository : CartRepository,
   ) {}
 
-  @post('/carts')
+  @authenticate('jwt')
+  @post('/carts/{customerId}')
   @response(200, {
     description: 'Cart model instance',
     content: {'application/json': {schema: getModelSchemaRef(Cart)}},
   })
   async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Cart, {
-            title: 'NewCart',
-            
-          }),
-        },
-      },
-    })
-    cart: Cart,
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
   ): Promise<Cart> {
-    return this.cartRepository.create(cart);
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== "customer") {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.cartRepository.create({customerId});
   }
 
-  @get('/carts/count')
-  @response(200, {
-    description: 'Cart model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Cart) where?: Where<Cart>,
-  ): Promise<Count> {
-    return this.cartRepository.count(where);
-  }
-
-  @get('/carts')
-  @response(200, {
-    description: 'Array of Cart model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Cart, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async find(
-    @param.filter(Cart) filter?: Filter<Cart>,
-  ): Promise<Cart[]> {
-    return this.cartRepository.find(filter);
-  }
-
-  @patch('/carts')
-  @response(200, {
-    description: 'Cart PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Cart, {partial: true}),
-        },
-      },
-    })
-    cart: Cart,
-    @param.where(Cart) where?: Where<Cart>,
-  ): Promise<Count> {
-    return this.cartRepository.updateAll(cart, where);
-  }
-
-  @get('/carts/{id}')
+  @authenticate('jwt')
+  @get('/customer/{customerId}/carts/{id}')
   @response(200, {
     description: 'Cart model instance',
     content: {
@@ -105,46 +56,32 @@ export class CartController {
     },
   })
   async findById(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
     @param.path.string('id') id: string,
     @param.filter(Cart, {exclude: 'where'}) filter?: FilterExcludingWhere<Cart>
   ): Promise<Cart> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== "customer" || user.id !== customerId) {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
     return this.cartRepository.findById(id, filter);
   }
 
-  @patch('/carts/{id}')
-  @response(204, {
-    description: 'Cart PATCH success',
-  })
-  async updateById(
-    @param.path.string('id') id: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Cart, {partial: true}),
-        },
-      },
-    })
-    cart: Cart,
-  ): Promise<void> {
-    await this.cartRepository.updateById(id, cart);
-  }
-
-  @put('/carts/{id}')
-  @response(204, {
-    description: 'Cart PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() cart: Cart,
-  ): Promise<void> {
-    await this.cartRepository.replaceById(id, cart);
-  }
-
-  @del('/carts/{id}')
+  @authenticate('jwt')
+  @del('/customer/{customerId}/carts/{id}')
   @response(204, {
     description: 'Cart DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+    @param.path.string('id') id: string,
+  ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== "customer" || user.id !== customerId) {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
     await this.cartRepository.deleteById(id);
   }
 }
