@@ -1,4 +1,4 @@
-@startuml
+@startuml architecture
 package "Development Environment" {
   [Development Database]
   [Development Application]

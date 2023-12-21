@@ -1,4 +1,4 @@
-@startuml
+@startuml Third-party API
 participant "Scheduler" as S
 participant "Third-party API" as TAPI
 participant "Our API" as OAPI
