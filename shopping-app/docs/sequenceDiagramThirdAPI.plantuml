@@ -1,0 +1,15 @@
+@startuml
+title Product Data Synchronization
+
+autonumber
+actor Scheduler
+participant "API Client" as Client
+database "Database Service" as DB
+actor "Third-party API" as API
+
+Scheduler -> Client: Trigger Sync
+Client -> API: Request Data
+API --> Client: Return Data
+Client -> DB: Send Data
+DB --> Client: Acknowledge Receipt
+@enduml
