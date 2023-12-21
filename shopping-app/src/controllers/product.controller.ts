@@ -19,7 +19,7 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import {Billing, Product, Transaction} from '../models';
-import {ProductRepository, TransactionRepository, BillingRepository} from '../repositories';
+import {ProductRepository, TransactionRepository, BillingRepository, TokenRepository} from '../repositories';
 import {authenticate, TokenService} from '@loopback/authentication';
 import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
 import { inject } from '@loopback/core';
@@ -31,6 +31,7 @@ export class ProductController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository(TokenRepository) public tokenRepository: TokenRepository,
     @repository(TransactionRepository) public transactionRepository: TransactionRepository,
     @repository(BillingRepository) public billingRepository: BillingRepository,
     @repository(ProductRepository)
@@ -48,6 +49,10 @@ export class ProductController {
     @param.path.string('id') id: string,
     @param.path.string('productId') productId: string
     ): Promise<void> {
+      const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -74,6 +79,10 @@ export class ProductController {
     @param.path.string('id') id: string,
     @param.filter(Product) filter?: Filter<Product>,
   ): Promise<Product[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -103,6 +112,10 @@ export class ProductController {
       },
     }) product: Omit<Product, 'id'>,
   ): Promise<Product> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -122,6 +135,10 @@ export class ProductController {
     @param.path.string('productId') productId: string,
     @requestBody() product: Partial<Product>,
   ): Promise<void> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -140,6 +157,10 @@ export class ProductController {
     @param.path.string('productId') productId: string,
     @requestBody() product: Product,
   ): Promise<void> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -174,6 +195,10 @@ async findProductDetails(
   @param.path.string('id') customerId: string,
   @param.query.string('productId') productId: string,
 ): Promise<{transactions: Transaction[], billings: Billing[]}> {
+  const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
   const user = await this.userService.findUserById(currentUserProfile[securityId]);
   if (user.role !== 'customer') {
     throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');

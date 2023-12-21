@@ -1,3 +1,10 @@
+//solutions for algorithm test
+// 1. Sort the listings by totalCost/container smallest to largest
+// 2. Loop through the listings and rent the smallest container first
+// 3. If the neededContainer is less than 0, break the loop (optimal solution)
+// 4. If the neededContainer is greater than 0, display "Not enough containers"
+// 5. Display the total cost
+
 function rentContainers(neededContainer, listings) {
     listings.sort((a, b) => (a.totalCost / a.container) - (b.totalCost / b.container));
 

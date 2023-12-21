@@ -52,32 +52,14 @@ async createAccount(
   admin: Admin,
   @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
 ): Promise<Admin> {
+  const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+  }
   const user = await this.userService.findUserById(currentUserProfile[securityId]);
   if (user.role !== 'admin') {
     throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
   }
   return this.adminRepository.create(admin);
 }
-
-  @authenticate({strategy: 'jwt'})
-  @post('/admin/logout')
-  @response(204, {
-    description: 'Customer logout success',
-  })
-  async logout(
-    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
-    @param.header.string('Authorization') authHeader: string,
-  ): Promise<void> {
-    const user = await this.userService.findUserById(currentUserProfile[securityId]);
-    if (user.role !== 'admin') {
-      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
-    }
-    const token = authHeader.replace('Bearer ', '');
-    if (token) {
-      this.tokenRepository.deleteAll({tokenValue: token});
-    } else {
-      throw new Error('No token found');
-    }
-  }
-
 }

@@ -16,7 +16,7 @@ import {
 } from '@loopback/authentication-jwt';
 import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
 import {Admin, Billing} from '../models';
-import {BillingRepository} from '../repositories';
+import {BillingRepository, TokenRepository} from '../repositories';
 import { authenticate, TokenService } from '@loopback/authentication';
 import { inject } from '@loopback/core';
 
@@ -26,6 +26,7 @@ export class BillingController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository (TokenRepository) public tokenRepository: TokenRepository,
     @repository(BillingRepository)
     public BillingRepository : BillingRepository,
   ) {}
@@ -43,6 +44,10 @@ export class BillingController {
   async findBillings(
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<Billing[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+  }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -64,6 +69,10 @@ export class BillingController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('productId') productId: string,
   ): Promise<Billing[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+  }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -89,6 +98,10 @@ export class BillingController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('agencyId') agencyId: string,
   ): Promise<Billing[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+  }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -114,6 +127,10 @@ export class BillingController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('customerId') customerId: string,
   ): Promise<Billing[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+  }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -142,6 +159,10 @@ export class BillingController {
     @param.path.string('productId') productId: string,
     @param.path.string('id') id: string,
   ): Promise<Billing[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+  if (!token) {
+    throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+  }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'customer') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');

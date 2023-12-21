@@ -9,7 +9,7 @@ import {
   HttpErrors,
 } from '@loopback/rest';
 import {Admin, Transaction} from '../models';
-import {TransactionRepository} from '../repositories';
+import {TransactionRepository, TokenRepository} from '../repositories';
 import { authenticate, TokenService } from '@loopback/authentication';
 import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
 import { inject } from '@loopback/core';
@@ -21,6 +21,7 @@ export class TransactionController {
     public jwtService: TokenService,
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
+    @repository (TokenRepository) public tokenRepository: TokenRepository,
     @repository(TransactionRepository) public transactionRelations: TransactionRepository,
     @repository(TransactionRepository)
     public transactionRepository : TransactionRepository,
@@ -39,6 +40,11 @@ export class TransactionController {
   async findTransactions(
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
   ): Promise<Transaction[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
+
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -60,6 +66,10 @@ export class TransactionController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('productId') productId: string,
   ): Promise<Transaction[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -85,6 +95,10 @@ export class TransactionController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('agencyId') agencyId: string,
   ): Promise<Transaction[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role !== 'admin') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
@@ -110,6 +124,10 @@ export class TransactionController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('customerId') customerId: string,
   ): Promise<Transaction[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role == 'admin' || user.role == 'agency') {
       return this.transactionRelations.find({
@@ -140,6 +158,10 @@ export class TransactionController {
     @param.path.string('transactionId') id: string,
     @param.path.string('productId') productId: string,
   ): Promise<Transaction[]> {
+    const token = await this.tokenRepository.findOne({where: {userId: currentUserProfile[securityId]}});
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(currentUserProfile[securityId]);
     if (user.role == 'customer') {
       return this.transactionRepository.find({

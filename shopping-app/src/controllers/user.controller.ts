@@ -2,14 +2,16 @@ import {
   repository,
 } from '@loopback/repository';
 import {
+  param,
   post,
   requestBody,
   SchemaObject,
+  response
 } from '@loopback/rest';
 import {AdminRepository, TokenRepository} from '../repositories';
 import { Credentials, MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
 import { inject } from '@loopback/core';
-import { TokenService } from '@loopback/authentication';
+import { TokenService, authenticate } from '@loopback/authentication';
 
 const CredentialsSchema: SchemaObject = {
   type: 'object',
@@ -85,4 +87,20 @@ export class UserController {
     return {token};
   }
   
+
+  @authenticate({strategy: 'jwt'})
+  @post('/logout')
+  @response(204, {
+    description: 'Customer logout success',
+  })
+  async logout(
+    @param.header.string('Authorization') authHeader: string,
+  ): Promise<void> {
+    const token = authHeader.replace('Bearer ', '');
+    if (token) {
+      this.tokenRepository.deleteAll({tokenValue: token});
+    } else {
+      throw new Error('No token found');
+    }
+  }
 }

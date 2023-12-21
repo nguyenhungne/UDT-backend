@@ -91,22 +91,6 @@ export class CustomerController {
     return savedUser;
   }
 
-@authenticate({strategy: 'jwt'})
-@post('/customers/logout')
-@response(204, {
-  description: 'Customer logout success',
-})
-async logout(
-  @param.header.string('Authorization') authHeader: string,
-): Promise<void> {
-  const token = authHeader.replace('Bearer ', '');
-  if (token) {
-    this.tokenRepository.deleteAll({tokenValue: token});
-  } else {
-    throw new Error('No token found');
-  }
-}
-
   // chinh sua thong tin khach hang
   @post('/customers')
   @response(200, {

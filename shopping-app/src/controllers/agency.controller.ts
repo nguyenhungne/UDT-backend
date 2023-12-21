@@ -100,29 +100,6 @@ export class AgencyController {
     return savedUser;
   }
 
-  @authenticate({ strategy: 'jwt' })
-  @post('/agency/logout')
-  @response(204, {
-    description: 'Customer logout success',
-  })
-  async logout(
-    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
-    @param.header.string('Authorization') authHeader: string,
-  ): Promise<void> {
-    const user = await this.userService.findUserById(
-      currentUserProfile[securityId],
-    );
-    if (user.role !== 'agency') {
-      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
-    }
-    const token = authHeader.replace('Bearer ', '');
-    if (token) {
-      this.tokenRepository.deleteAll({ tokenValue: token });
-    } else {
-      throw new Error('No token found');
-    }
-  }
-
   // tao 1 agency
   @post('/agencies')
   @response(200, {
@@ -198,6 +175,10 @@ export class AgencyController {
     agency: Agency,
     @param.where(Agency) where?: Where<Agency>,
   ): Promise<Count> {
+    const token = await this.tokenRepository.findOne({ where: { userId: currentUserProfile[securityId] } });
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(
       currentUserProfile[securityId],
     );
@@ -224,6 +205,10 @@ export class AgencyController {
     @param.filter(Agency, { exclude: 'where' })
     filter?: FilterExcludingWhere<Agency>,
   ): Promise<Agency> {
+    const token = await this.tokenRepository.findOne({ where: { userId: currentUserProfile[securityId] } });
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(
       currentUserProfile[securityId],
     );
@@ -251,6 +236,10 @@ export class AgencyController {
     })
     agency: Agency,
   ): Promise<void> {
+    const token = await this.tokenRepository.findOne({ where: { userId: currentUserProfile[securityId] } });
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(
       currentUserProfile[securityId],
     );
@@ -274,6 +263,10 @@ export class AgencyController {
     const user = await this.userService.findUserById(
       currentUserProfile[securityId],
     );
+    const token = await this.tokenRepository.findOne({ where: { userId: currentUserProfile[securityId] } });
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     if (user.role !== 'agency') {
       throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
     }
@@ -290,6 +283,10 @@ export class AgencyController {
     @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.path.string('id') id: string,
   ): Promise<void> {
+    const token = await this.tokenRepository.findOne({ where: { userId: currentUserProfile[securityId] } });
+    if (!token) {
+      throw new HttpErrors.Forbidden('TOKEN IS INVALID');
+    }
     const user = await this.userService.findUserById(
       currentUserProfile[securityId],
     );
