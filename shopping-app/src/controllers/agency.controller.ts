@@ -19,6 +19,7 @@ import {
   requestBody,
   response,
   SchemaObject,
+  HttpErrors,
 } from '@loopback/rest';
 import {Agency, Product} from '../models';
 import {AgencyRepository, TokenRepository, ProductRepository} from '../repositories';
@@ -26,6 +27,7 @@ import { authenticate, TokenService } from '@loopback/authentication';
 import { Credentials, MyUserService, TokenServiceBindings, User, UserRepository, UserServiceBindings } from '@loopback/authentication-jwt';
 import { inject } from '@loopback/core';
 import { genSalt, hash } from 'bcryptjs';
+import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
 import _ from 'lodash';
 
 @model()
@@ -170,8 +172,13 @@ export class AgencyController {
     description: 'Customer logout success',
   })
   async logout(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.header.string('Authorization') authHeader: string,
   ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
     const token = authHeader.replace('Bearer ', '');
     if (token) {
       this.tokenRepository.deleteAll({tokenValue: token});
@@ -180,12 +187,126 @@ export class AgencyController {
     }
   }
 
+  // lay danh sach cac product cua 1 agency
+  @authenticate('jwt')
+  @get("/agency/{id}/products")
+  @response(200, {
+    description: 'Array of Product model instances',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Product, {includeRelations: true}),
+        },
+      },
+    },
+  })
+  async findProducts(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: string,
+    @param.filter(Product) filter?: Filter<Product>,
+  ): Promise<Product[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.ProductRepository.find({where: {agencyId: id}});
+  }
+
+  // tao 1 product cua 1 agency
+  @authenticate('jwt')
+  @post('/agency/{id}/products')
+  @response(200, {
+    description: 'Product model instance',
+    content: {'application/json': {schema: getModelSchemaRef(Product)}},
+  })
+  async createProduct(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: typeof Product.prototype.id,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Product, {
+            title: 'NewProductInAgency',
+            exclude: ['id'],
+            optional: ['agencyId']
+          }),
+        },
+      },
+    }) product: Omit<Product, 'id'>,
+  ): Promise<Product> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.ProductRepository.createProductOfAgency(id, product);
+  }
+
+
+  // lay 1 product cua 1 agency
+  @authenticate('jwt')
+  @del('/agencies/{id}/products{productId}')
+  @response(204, {
+    description: 'Agency DELETE success',
+  })
+  async deleteProductsOfAgency(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('id') id: string,
+    @param.path.string('productId') productId: string
+    ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'agency') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    await this.ProductRepository.deleteAll({agencyId: id, id: productId});
+  }
+
+// update 1 phan thong tin cua 1 product
+@authenticate('jwt')
+@patch('/agencies/{id}/products{productId}')
+@response(204, {
+  description: 'Agency PATCH success',
+})
+async updateProductsOfAgency(
+  @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  @param.path.string('id') id: string,
+  @param.path.string('productId') productId: string,
+  @requestBody() product: Partial<Product>,
+): Promise<void> {
+  const user = await this.userService.findUserById(currentUserProfile[securityId]);
+  if (user.role !== 'agency') {
+    throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+  }
+  await this.ProductRepository.updateAll(product, {agencyId: id, id: productId});
+}
+
+
+// update toan bo thong tin cua 1 product
+@authenticate('jwt')
+@put('/agencies/products{productId}')
+@response(204, {  
+  description: 'Agency PUT success',
+})
+async replaceProductsOfAgency(
+  @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  @param.path.string('productId') productId: string,
+  @requestBody() product: Product,
+): Promise<void> {
+  const user = await this.userService.findUserById(currentUserProfile[securityId]);
+  if (user.role !== 'agency') {
+    throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+  }
+  await this.ProductRepository.replaceById(productId, product);
+}
+
+  // tao 1 agency
   @post('/agencies')
   @response(200, {
     description: 'Agency model instance',
     content: {'application/json': {schema: getModelSchemaRef(Agency)}},
   })
   async create(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @requestBody({
       content: {
         'application/json': {
@@ -198,9 +319,15 @@ export class AgencyController {
     })
     agency: Agency,
   ): Promise<Agency> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
     return this.agencyRepository.create(agency);
   }
 
+
+  // dem so luong agency
   @get('/agencies/count')
   @response(200, {
     description: 'Agency model count',
@@ -212,6 +339,8 @@ export class AgencyController {
     return this.agencyRepository.count(where);
   }
 
+
+  // lay danh sach cac agency
   @get('/agencies')
   @response(200, {
     description: 'Array of Agency model instances',
@@ -230,6 +359,9 @@ export class AgencyController {
     return this.agencyRepository.find(filter);
   }
 
+
+  // update 1 phan thong tin cua 1 agency
+  @authenticate('jwt')
   @patch('/agencies')
   @response(200, {
     description: 'Agency PATCH success count',
@@ -249,6 +381,7 @@ export class AgencyController {
     return this.agencyRepository.updateAll(agency, where);
   }
 
+  // lay 1 agency
   @authenticate('jwt')
   @get('/agencies/{id}')
   @response(200, {
@@ -266,6 +399,9 @@ export class AgencyController {
     return this.agencyRepository.findById(id, filter);
   }
 
+
+  // update toan bo thong tin cua 1 agency
+  @authenticate('jwt')
   @patch('/agencies/{id}')
   @response(204, {
     description: 'Agency PATCH success',
@@ -284,6 +420,9 @@ export class AgencyController {
     await this.agencyRepository.updateById(id, agency);
   }
 
+
+  // update toan bo thong tin cua 1 agency
+  @authenticate('jwt')
   @put('/agencies/{id}')
   @response(204, {
     description: 'Agency PUT success',
@@ -295,6 +434,8 @@ export class AgencyController {
     await this.agencyRepository.replaceById(id, agency);
   }
 
+  // xoa 1 agency
+  @authenticate('jwt')
   @del('/agencies/{id}')
   @response(204, {
     description: 'Agency DELETE success',

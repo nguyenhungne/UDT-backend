@@ -20,6 +20,12 @@ export class Billing extends Entity {
     required: true,
   })
   productId: string;
+  
+  @property({
+    type: 'string',
+    required: true,
+  })
+  agencyId: string;
 
   @property({
     type: 'number',

@@ -1,38 +1,31 @@
 import {
-  Count,
-  CountSchema,
-  Filter,
-  FilterExcludingWhere,
-  model,
-  property,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
   param,
   get,
   getModelSchemaRef,
-  patch,
-  put,
-  del,
   requestBody,
   response,
   SchemaObject,
+  HttpErrors,
 } from '@loopback/rest';
-import {Admin} from '../models';
-import {AdminRepository, TokenRepository} from '../repositories';
-import { Credentials, MyUserService, TokenServiceBindings, UserServiceBindings } from '@loopback/authentication-jwt';
-import { inject } from '@loopback/core';
-import { TokenService } from '@loopback/authentication';
-import {authenticate} from '@loopback/authentication';
-
-
-
+import {Admin, Billing, Transaction} from '../models';
+import {AdminRepository, TokenRepository, BillingRepository, TransactionRepository} from '../repositories';
+import {
+  Credentials,
+  MyUserService,
+  TokenServiceBindings,
+  UserServiceBindings,
+} from '@loopback/authentication-jwt';
+import {inject} from '@loopback/core';
+import {authenticate, TokenService} from '@loopback/authentication';
+import { UserProfile, securityId,SecurityBindings  } from '@loopback/security';
 
 const CredentialsSchema: SchemaObject = {
   type: 'object',
-  required: ["email", 'password'],
+  required: ['email', 'password'],
   properties: {
     email: {
       type: 'string',
@@ -45,7 +38,6 @@ const CredentialsSchema: SchemaObject = {
   },
 };
 
-
 export const AminCredentialsRequestBody = {
   description: 'The input of login function',
   required: true,
@@ -54,7 +46,6 @@ export const AminCredentialsRequestBody = {
   },
 };
 
-
 export class AdminController {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
@@ -62,8 +53,10 @@ export class AdminController {
     @inject(UserServiceBindings.USER_SERVICE)
     public userService: MyUserService,
     @repository(TokenRepository) public tokenRepository: TokenRepository,
+    @repository(BillingRepository) public BillingRepository: BillingRepository,
+    @repository(TransactionRepository) public transactionRelations: TransactionRepository,
     @repository(AdminRepository)
-    public adminRepository : AdminRepository,
+    public adminRepository: AdminRepository,
   ) {}
 
   @post('/admin/login', {
@@ -98,10 +91,36 @@ export class AdminController {
     const newUser = {
       userId: user.id,
       tokenValue: token,
-    }
-    await this.tokenRepository.create(newUser); 
+    };
+    await this.tokenRepository.create(newUser);
     return {token};
   }
+
+@authenticate('jwt')
+@post('/admin/create')
+@response(200, {
+  description: 'Admin model instance',
+  content: {'application/json': {schema: getModelSchemaRef(Admin)}},
+})
+async createAccount(
+  @requestBody({
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {
+          title: 'NewAdmin',
+        }),
+      },
+    },
+  })
+  admin: Admin,
+  @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+): Promise<Admin> {
+  const user = await this.userService.findUserById(currentUserProfile[securityId]);
+  if (user.role !== 'admin') {
+    throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+  }
+  return this.adminRepository.create(admin);
+}
 
   @authenticate({strategy: 'jwt'})
   @post('/admin/logout')
@@ -109,8 +128,13 @@ export class AdminController {
     description: 'Customer logout success',
   })
   async logout(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
     @param.header.string('Authorization') authHeader: string,
   ): Promise<void> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
     const token = authHeader.replace('Bearer ', '');
     if (token) {
       this.tokenRepository.deleteAll({tokenValue: token});
@@ -119,76 +143,8 @@ export class AdminController {
     }
   }
 
-  @post('/admins')
-  @response(200, {
-    description: 'Admin model instance',
-    content: {'application/json': {schema: getModelSchemaRef(Admin)}},
-  })
-  async create(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Admin, {
-            title: 'NewAdmin',
-            
-          }),
-        },
-      },
-    })
-    admin: Admin,
-  ): Promise<Admin> {
-    return this.adminRepository.create(admin);
-  }
-
-  @get('/admins/count')
-  @response(200, {
-    description: 'Admin model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Admin) where?: Where<Admin>,
-  ): Promise<Count> {
-    return this.adminRepository.count(where);
-  }
-
-  @get('/admins')
-  @response(200, {
-    description: 'Array of Admin model instances',
-    content: {
-      'application/json': {
-        schema: {
-          type: 'array',
-          items: getModelSchemaRef(Admin, {includeRelations: true}),
-        },
-      },
-    },
-  })
-  async find(
-    @param.filter(Admin) filter?: Filter<Admin>,
-  ): Promise<Admin[]> {
-    return this.adminRepository.find(filter);
-  }
-
-  @patch('/admins')
-  @response(200, {
-    description: 'Admin PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Admin, {partial: true}),
-        },
-      },
-    })
-    admin: Admin,
-    @param.where(Admin) where?: Where<Admin>,
-  ): Promise<Count> {
-    return this.adminRepository.updateAll(admin, where);
-  }
-
-  @get('/admins/{id}')
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billings')
   @response(200, {
     description: 'Admin model instance',
     content: {
@@ -197,47 +153,185 @@ export class AdminController {
       },
     },
   })
-  async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Admin, {exclude: 'where'}) filter?: FilterExcludingWhere<Admin>
-  ): Promise<Admin> {
-    return this.adminRepository.findById(id, filter);
+  async findBillings(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find();
   }
 
-  @patch('/admins/{id}')
-  @response(204, {
-    description: 'Admin PATCH success',
-  })
-  async updateById(
-    @param.path.string('id') id: string,
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Admin, {partial: true}),
-        },
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactions')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
       },
-    })
-    admin: Admin,
-  ): Promise<void> {
-    await this.adminRepository.updateById(id, admin);
+    },
+  })
+  async findTransactions(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find();
   }
 
-  @put('/admins/{id}')
-  @response(204, {
-    description: 'Admin PUT success',
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfProduct/{productId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
   })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() admin: Admin,
-  ): Promise<void> {
-    await this.adminRepository.replaceById(id, admin);
+  async findBillingByProductId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('productId') productId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        productId: productId,
+      },
+    });
   }
 
-  @del('/admins/{id}')
-  @response(204, {
-    description: 'Admin DELETE success',
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfAgency/{agencyId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
-    await this.adminRepository.deleteById(id);
+  async findBillingByAgencyId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('agencyId') agencyId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        agencyId: agencyId,
+      },
+    });
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/billingsOfCustomer/{customerId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findBillingByCustomerId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+  ): Promise<Billing[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.BillingRepository.find({
+      where: {
+        customerId: customerId,
+      },
+    });
+  }
+
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsOfProduct/{productId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findTransactionsByProductId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('productId') productId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRelations.find({
+      where: {
+        productId: productId,
+      },
+    });
+  }
+
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsPfAgency/{agencyId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findTransactionsByAgencyId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('agencyId') agencyId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRelations.find({
+      where: {
+        agencyId: agencyId,
+      },
+    });
+  }
+
+  @authenticate({strategy: 'jwt'})
+  @get('/admin/transactionsOfCustomer/{customerId}')
+  @response(200, {
+    description: 'Admin model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Admin, {includeRelations: true}),
+      },
+    },
+  })
+  async findTransactionsByCustomerId(
+    @inject(SecurityBindings.USER) currentUserProfile: UserProfile,
+    @param.path.string('customerId') customerId: string,
+  ): Promise<Transaction[]> {
+    const user = await this.userService.findUserById(currentUserProfile[securityId]);
+    if (user.role !== 'admin') {
+      throw new HttpErrors.Forbidden('INVALID_ACCESS_PERMISSION');
+    }
+    return this.transactionRelations.find({
+      where: {
+        customerId: customerId,
+      },
+    });
   }
 }

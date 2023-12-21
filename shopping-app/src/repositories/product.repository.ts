@@ -8,6 +8,10 @@ export class ProductRepository extends DefaultCrudRepository<
   typeof Product.prototype.id,
   ProductRelations
 > {
+  createProductOfAgency(id: string | undefined, product: Omit<Product, "id">): Product | PromiseLike<Product> {
+    product.agencyId = id as string;
+    return this.create(product);
+  }
   constructor(
     @inject('datasources.Shopping_app_database') dataSource: ShoppingAppDatabaseDataSource,
   ) {

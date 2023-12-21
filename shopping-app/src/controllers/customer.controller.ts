@@ -126,7 +126,6 @@ export class CustomerController {
   }
 
 
-  //authenticate({strategy: 'jwt'})
   @post('/customer/signup', {
     responses: {
       '200': {
@@ -255,7 +254,7 @@ async logout(
   }
 }
 
-  
+  // chinh sua thong tin khach hang
   @post('/customers')
   @response(200, {
     description: 'Customer model instance',
@@ -277,6 +276,7 @@ async logout(
     return this.customerRepository.create(customer);
   }
 
+  // dem so luong khach hang
   @get('/customers/count')
   @response(200, {
     description: 'Customer model count',
@@ -288,6 +288,7 @@ async logout(
     return this.customerRepository.count(where);
   }
 
+  // tim kiem khach hang
   @get('/customers')
   @response(200, {
     description: 'Array of Customer model instances',
@@ -306,6 +307,7 @@ async logout(
     return this.customerRepository.find(filter);
   }
 
+  // cap nhat thong tin khach hang
   @patch('/customers')
   @response(200, {
     description: 'Customer PATCH success count',
@@ -325,6 +327,7 @@ async logout(
     return this.customerRepository.updateAll(customer, where);
   }
 
+  // lay thong tin khach hang theo id
   @get('/customers/{id}')
   @response(200, {
     description: 'Customer model instance',
@@ -341,6 +344,7 @@ async logout(
     return this.customerRepository.findById(id, filter);
   }
 
+  // cap nhat thong tin khach hang theo id
   @patch('/customers/{id}')
   @response(204, {
     description: 'Customer PATCH success',
@@ -359,6 +363,7 @@ async logout(
     await this.customerRepository.updateById(id, customer);
   }
 
+  // thay the thong tin khach hang theo id
   @put('/customers/{id}')
   @response(204, {
     description: 'Customer PUT success',
@@ -370,6 +375,7 @@ async logout(
     await this.customerRepository.replaceById(id, customer);
   }
 
+  // xoa thong tin khach hang theo id
   @del('/customers/{id}')
   @response(204, {
     description: 'Customer DELETE success',
